@@ -1,0 +1,20 @@
+{
+    "name": "framework/database",
+    "description": "Database package",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "yuanzhong",
+            "email": "kld230@163.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+	},
+    "autoload": {
+        "psr-4": {
+            "framework\\Database\\": ""
+        }
+    }
+}
