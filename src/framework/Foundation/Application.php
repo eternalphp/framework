@@ -4,7 +4,7 @@ namespace framework\Foundation;
 
 use framework\Container\Container;
 use framework\Router\Router;
-use framework\Config\Config;
+use framework\Config\Repository;
 use framework\Filesystem\Filesystem;
 
 
@@ -18,8 +18,8 @@ class Application
 		$this->basePath = $basePath;
 		$this->container = Container::getInstance();
 		$this->register();
-		$this->init();
 		$this->load();
+		$this->init();
 	}
 
 	public function load(){
@@ -29,7 +29,7 @@ class Application
 			$this->configs = array_merge($this->configs,$items);
 		});
 		
-		$this->container->bind('config',new Config($this->configs));
+		$this->container->bind('config',new Repository($this->configs));
 	}
 	
 	public function Start(){
@@ -98,9 +98,9 @@ class Application
 	}
 	
 	public function register(){
-		$registers = array('Filesystem');
-		foreach($registers as $class){
-			$this->container->bind($class,new $class());
+		$registers = array('Filesystem'=>Filesystem::class);
+		foreach($registers as $key=>$class){
+			$this->container->bind($key,new $class());
 		}
 	}
 	
@@ -135,7 +135,13 @@ class Application
 	}
 	
 	public function routePath($path = ''){
-		$paths = array($this->basePath,'routes');
+		$paths = array($this->basePath,'routers');
+		if($path != '') $paths[] = $path;
+		return implode(DIRECTORY_SEPARATOR,$paths);
+	}
+	
+	public function appPath($path = ''){
+		$paths = array($this->basePath,'app');
 		if($path != '') $paths[] = $path;
 		return implode(DIRECTORY_SEPARATOR,$paths);
 	}
