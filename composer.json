@@ -33,7 +33,8 @@
 			"framework\\Foundation\\": "src/framework/Foundation/",
 			"framework\\Debug\\": "src/framework/Debug/",
 			"framework\\Exception\\": "src/framework/Exception/",
-			"framework\\View\\": "src/framework/View/"
+			"framework\\View\\": "src/framework/View/",
+			"framework\\Controller\\": "src/framework/Controller/"
 		}
 	}
 }

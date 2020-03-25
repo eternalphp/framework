@@ -128,7 +128,7 @@ class Router{
 	 * @param string $method
 	 * @return bool;
 	 */
-	public static function verification($uri, $method){
+	public static function query($uri, $method){
 		foreach(self::$routes as $route){
 			if($route->match($uri, $method)){
 				return $route;
