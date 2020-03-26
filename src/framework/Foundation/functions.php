@@ -1,7 +1,5 @@
 <?php
 
-namespace framework\Foundation;
-
 use framework\Container\Container;
 use framework\Debug\Debug;
 
