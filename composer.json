@@ -35,6 +35,9 @@
 			"framework\\Exception\\": "src/framework/Exception/",
 			"framework\\View\\": "src/framework/View/",
 			"framework\\Controller\\": "src/framework/Controller/"
-		}
+		},
+		"files":[
+			"src/framework/Foundation/functions.php"
+		]
 	}
 }
