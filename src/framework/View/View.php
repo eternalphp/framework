@@ -8,9 +8,8 @@ class View extends Engine
 	
 	public function __construct(){
 		parent::__construct();
-		$app = Container::getInstance();
-		$this->templatePath($app["application"]->appPath("views/template"));
-		$this->cachePath($app["application"]->appPath("views/cache"));
+		$this->templatePath(app("Application")->appPath("views/template"));
+		$this->cachePath(app("Application")->appPath("views/cache"));
 	}
 	
 	/**

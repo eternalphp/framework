@@ -2,21 +2,21 @@
 
 namespace framework\Session;
 
-use framework\Session\SessionInterface;
-use SessionHandlerInterface;
+use framework\Session\SessionManager;
 use framework\Support\Arr;
 
-class Session implements SessionInterface
+class Session
 {
 	private $sessionId;
 	private $name;
 	private $handle;
 	private $sessionData;
+	private $prefix = 'sess';
 	
-	public function __construct($name, SessionHandlerInterface $handler,$sessionId){
-		$this->name = $name;
-		$this->handle = $handle;
-		$this->sessionId = $sessionId;
+	public function __construct(SessionManager $handler){
+		$this->name = 'PHPSESSID';
+		$this->handle = $handler->getDefaultDriver();
+		$this->sessionId = session_id();
 		$this->sessionData = $this->getSessionHandle();
 		$this->Arr = new Arr($this->sessionData);
 	}
@@ -40,8 +40,23 @@ class Session implements SessionInterface
      * @return bool
      */
 	public function put($key,$value){
-		$this->Arr->put($key,$value);
+		$this->Arr->set($key,$value);
+		$this->sessionData = $this->Arr->get();
 		$this->handle->write($this->getId(),serialize($this->sessionData));
+	}
+	
+    /**
+     * put session
+     *
+     * @param string $key
+	 * @param string $value
+     * @return bool
+     */
+	public function remove($key){
+		$this->Arr->remove($key);
+		$this->sessionData = $this->Arr->get();
+		$this->handle->write($this->getId(),serialize($this->sessionData));
+		return true;
 	}
 	
 	public function getSessionHandle(){
@@ -55,7 +70,7 @@ class Session implements SessionInterface
 	}
 	
 	public function getId(){
-		return $this->sessionId;
+		return implode("_",[$this->prefix,$this->sessionId]);
 	}
 	
     /**

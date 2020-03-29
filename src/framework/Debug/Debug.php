@@ -9,13 +9,19 @@ class Debug extends Exception{
 	private $debugPath = '/debug/';
 	private $format = 'Ym';
 	private $splitStr = '--';
-	private $message;
-	const DEBUG_FILE_SIZE = 10240000;
+	protected $message;
+	const DEBUG_FILE_SIZE = 1024*1024*10;
 	
-	public function __construct($message){
+	public function __construct($message,$print = false){
 		
 		$this->message = $message;
-		$this->debugPath   = ROOT . $this->debugPath . date($this->format).'/';
+		$this->debugPath   = storage_path($this->debugPath . date($this->format) . '/');
+		if($print == false){
+			$this->output();
+		}else{
+			$this->show();
+		}
+		
 	}
 	
 	private function getDebugData(){
@@ -36,10 +42,10 @@ class Debug extends Exception{
 		return $this->debugPath . date("Ymd").'_debug.log';
 	}
 	
-	public function output(){
+	private function output(){
 		
 		if(!file_exists($this->debugPath)){
-			mkdir($path,0777,true);
+			mkdir($this->debugPath,0777,true);
 		}
 		
 		$filename = $this->getFilename();
@@ -53,7 +59,7 @@ class Debug extends Exception{
 		}
 	}
 	
-	public function show(){
+	private function show(){
 		print_r($this->message);
 	}
 

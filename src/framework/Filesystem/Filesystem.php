@@ -2,6 +2,7 @@
 
 namespace framework\Filesystem;
 
+use Exception;
 
 class Filesystem
 {

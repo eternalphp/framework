@@ -57,7 +57,7 @@ class Arr
 	 * @param string $default
      * @return string | $default
      */
-	public function get($key,$default = null){
+	public function get($key = null,$default = null){
 		
 		if(is_null($key)){
 			return $this->arrayList;

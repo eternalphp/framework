@@ -6,18 +6,22 @@ use framework\Container\Container;
 use framework\Router\Router;
 use framework\Config\Repository;
 use framework\Filesystem\Filesystem;
-
+use framework\Session\Session;
+use framework\Cookie\Cookie;
 
 class Application
 {
+	
+	const VERSION = '3.0.1';
+	
 	private $container;
 	private $basePath;
+	private $services = [];
 	
-	public function __construct($basePath = null){
-		
-		$this->basePath = $basePath;
+	public function __construct(){
+		$this->basePath = ROOT;
 		$this->container = Container::getInstance();
-		$this->register();
+		$this->container->bind('Filesystem',Filesystem::class);
 		$this->load();
 		$this->init();
 	}
@@ -26,7 +30,8 @@ class Application
 		$this->configs = array();
 		$this->container['Filesystem']->getFiles($this->configPath(),function($filename){
 			$items = require($filename);
-			$this->configs = array_merge($this->configs,$items);
+			$name = $this->container['Filesystem']->name($filename);
+			$this->configs = array_merge($this->configs,[$name=>$items]);
 		});
 		
 		$this->container->bind('config',new Repository($this->configs));
@@ -97,11 +102,27 @@ class Application
 		}
 	}
 	
-	public function register(){
-		$registers = array('Filesystem'=>Filesystem::class);
-		foreach($registers as $key=>$class){
-			$this->container->bind($key,new $class());
-		}
+	public function register($service,$force = false){
+		
+        $registered = $this->getService($service);
+
+        if ($registered && !$force) {
+            return $registered;
+        }
+
+        if (is_string($service)) {
+            $service = new $service($this);
+        }
+
+        if (method_exists($service, 'register')) {
+            $service->register();
+        }
+
+        if (property_exists($service, 'bind')) {
+            $this->bind($service->bind);
+        }
+
+        $this->services[] = $service;
 	}
 	
 	public function config($key,$default = null){
@@ -120,11 +141,13 @@ class Application
 	
 	public function publicPath($path = ''){
 		$paths = array($this->basePath,'public');
+		if($path != '') $paths[] = $path;
 		return implode(DIRECTORY_SEPARATOR,$paths);
 	}
 	
-	public function storagePath(){
+	public function storagePath($path = ''){
 		$paths = array($this->basePath,'storage');
+		if($path != '') $paths[] = $path;
 		return implode(DIRECTORY_SEPARATOR,$paths);
 	}
 	
@@ -147,8 +170,35 @@ class Application
 	}
 	
 	public function init(){
-		date_default_timezone_set($this->config('date_default_timezone','Asia/Shanghai')); //默认时区
-		ini_set('default_charset', $this->config('charset','utf-8')); //默认编码
-		ini_set('magic_quotes_runtime', $this->config('magic_quotes_runtime',1)); //魔法反斜杠转义关闭
+		
+		//默认时区
+		date_default_timezone_set($this->config('config.date_default_timezone','Asia/Shanghai')); 
+		//默认编码
+		ini_set('default_charset', $this->config('config.charset','utf-8'));
+		//魔法反斜杠转义关闭
+		ini_set('magic_quotes_runtime', $this->config('config.magic_quotes_runtime',1)); 
+		
+		$registers = array(
+			'cookie'  => Cookie::class
+		);
+		foreach($registers as $key=>$class){
+			$this->container->bind($key,$class);
+		}
+		
+		$this->container['Filesystem']->getFiles($this->appPath('Services'),function($filename){
+			$services = require($filename);
+			if($services){
+				foreach($services as $server){
+					$this->register($server);
+				}
+			}
+		});
+	}
+	
+	public function getService($service){
+        $name = is_string($service) ? $service : get_class($service);
+        return array_values(array_filter($this->services, function ($value) use ($name) {
+            return $value instanceof $name;
+        }, ARRAY_FILTER_USE_BOTH))[0] ?? null;
 	}
 }
