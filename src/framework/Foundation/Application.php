@@ -8,6 +8,7 @@ use framework\Config\Repository;
 use framework\Filesystem\Filesystem;
 use framework\Session\Session;
 use framework\Cookie\Cookie;
+use framework\Logger\Logger;
 
 class Application
 {
@@ -23,10 +24,18 @@ class Application
 		$this->container = Container::getInstance();
 		$this->container->bind('Filesystem',Filesystem::class);
 		$this->load();
+		$this->loadRoute();
 		$this->init();
 	}
 
+    /**
+     * load config file
+     *
+     * @return void
+     */
 	public function load(){
+		
+		//加载配置文件
 		$this->configs = array();
 		$this->container['Filesystem']->getFiles($this->configPath(),function($filename){
 			$items = require($filename);
@@ -35,13 +44,38 @@ class Application
 		});
 		
 		$this->container->bind('config',new Repository($this->configs));
+		
+		//加载语言包
+		$this->items = array();
+		$this->container['Filesystem']->getFiles($this->languagePath(),function($filename){
+			$items = require($filename);
+			$name = $this->container['Filesystem']->name($filename);
+			$this->items = array_merge($this->items,[$name=>$items]);
+		});
+		
+		$this->container->bind('language',new Language($this->items));
+		
+		//绑定基本类
+		$registers = $this->config("app.aliases");
+		if($registers){
+			foreach($registers as $key=>$class){
+				$this->container->bind($key,$class);
+			}
+		}
+		
+		//注册服务
+		$services = $this->config("app.providers");
+		if($services){
+			array_map($this->register,$services);
+		}
 	}
 	
+    /**
+     * application start
+     *
+     * @return void
+     */
 	public function Start(){
-		
-		$this->container['Filesystem']->getFiles($this->routePath(),function($filename){
-			require($filename);
-		});
 		
 		try{
 			
@@ -102,6 +136,13 @@ class Application
 		}
 	}
 	
+    /**
+     * register service to services
+     *
+	 * @param string $service
+	 * @param bool $force
+     * @return void
+     */
 	public function register($service,$force = false){
 		
         $registered = $this->getService($service);
@@ -125,50 +166,115 @@ class Application
         $this->services[] = $service;
 	}
 	
+    /**
+     * get value of config
+     *
+	 * @param string $key
+	 * @param string $default
+     * @return string
+     */
 	public function config($key,$default = null){
 		return $this->container['config']->get($key,$default);
 	}
 	
+    /**
+     * get root path
+     *
+     * @return string
+     */
 	public function basePath(){
 		return $this->basePath;
 	}
 	
+    /**
+     * get config path
+     *
+	 * @param string $path
+     * @return string
+     */
 	public function configPath($path = ''){
 		$paths = array($this->basePath,'configs');
 		if($path != '') $paths[] = $path;
 		return implode(DIRECTORY_SEPARATOR,$paths);
 	}
 	
+    /**
+     * get public path
+     *
+	 * @param string $path
+     * @return string
+     */
 	public function publicPath($path = ''){
 		$paths = array($this->basePath,'public');
 		if($path != '') $paths[] = $path;
 		return implode(DIRECTORY_SEPARATOR,$paths);
 	}
 	
+    /**
+     * get storage path
+     *
+	 * @param string $path
+     * @return string
+     */
 	public function storagePath($path = ''){
 		$paths = array($this->basePath,'storage');
 		if($path != '') $paths[] = $path;
 		return implode(DIRECTORY_SEPARATOR,$paths);
 	}
 	
+    /**
+     * get resource path
+     *
+	 * @param string $path
+     * @return string
+     */
 	public function resourcePath($path = ''){
 		$paths = array($this->basePath,'resource');
 		if($path != '') $paths[] = $path;
 		return implode(DIRECTORY_SEPARATOR,$paths);
 	}
 	
+    /**
+     * get route path
+     *
+	 * @param string $path
+     * @return string
+     */
 	public function routePath($path = ''){
 		$paths = array($this->basePath,'routers');
 		if($path != '') $paths[] = $path;
 		return implode(DIRECTORY_SEPARATOR,$paths);
 	}
 	
+    /**
+     * get app path
+     *
+	 * @param string $path
+     * @return string
+     */
 	public function appPath($path = ''){
 		$paths = array($this->basePath,'app');
 		if($path != '') $paths[] = $path;
 		return implode(DIRECTORY_SEPARATOR,$paths);
 	}
 	
+    /**
+     * get language path
+     *
+	 * @param string $path
+     * @return string
+     */
+	public function languagePath($path = 'zh'){
+		$paths = array($this->basePath,'resource','lang');
+		if($path != '') $paths[] = $path;
+		return implode(DIRECTORY_SEPARATOR,$paths);
+	}
+	
+    /**
+     * application init
+     *
+     * @return void
+     */
 	public function init(){
 		
 		//默认时区
@@ -176,25 +282,28 @@ class Application
 		//默认编码
 		ini_set('default_charset', $this->config('config.charset','utf-8'));
 		//魔法反斜杠转义关闭
-		ini_set('magic_quotes_runtime', $this->config('config.magic_quotes_runtime',1)); 
-		
-		$registers = array(
-			'cookie'  => Cookie::class
-		);
-		foreach($registers as $key=>$class){
-			$this->container->bind($key,$class);
-		}
-		
-		$this->container['Filesystem']->getFiles($this->appPath('Services'),function($filename){
-			$services = require($filename);
-			if($services){
-				foreach($services as $server){
-					$this->register($server);
-				}
-			}
+		ini_set('magic_quotes_runtime', $this->config('config.magic_quotes_runtime',1));
+
+		$this->container->get('logger')->init();
+	}
+	
+    /**
+     * load route config
+     *
+     * @return void
+     */
+	public function loadRoute(){
+		$this->container['Filesystem']->getFiles($this->routePath(),function($filename){
+			require($filename);
 		});
 	}
 	
+    /**
+     * get service from services
+     *
+	 * @param string $service
+     * @return string
+     */
 	public function getService($service){
         $name = is_string($service) ? $service : get_class($service);
         return array_values(array_filter($this->services, function ($value) use ($name) {

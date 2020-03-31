@@ -11,11 +11,11 @@ class CacheFile implements CacheInterface
 	private $expire;
 	private $prefix;
 	private $directory;
-	private $files;
+	private $handler;
 	
 	public function __construct($directory){
 		$this->expire = 120;
-		$this->files = new Filesystem();
+		$this->handler = new Filesystem();
 		$this->directory = $directory;
 	}
 	
@@ -27,7 +27,12 @@ class CacheFile implements CacheInterface
      */
 	public function get($key,$default = null){
 		$path = $this->path($key);
-		$content = $this->files->get($path);
+		
+		if(!$this->handler->exists($path)){
+			return $default;
+		}
+		
+		$content = $this->handler->get($path);
 		$time = (int)substr($content,0,10);
 		if(time() > $time){
 			$this->remove($key);
@@ -36,7 +41,7 @@ class CacheFile implements CacheInterface
 		
 		$data = substr($content,10);
 		if(function_exists('gzuncompress')){
-			$data = gzuncompress($data,3);
+			$data = gzuncompress($data);
 		}
 		return unserialize($data);
 	}
@@ -55,7 +60,7 @@ class CacheFile implements CacheInterface
 			$data = gzcompress($data,3);
 		}
 		$time = $this->expiration($this->expire);
-		$this->files->put($path,$time.$data,true);
+		$this->handler->put($path,$time.$data,true);
 	}
 	
     /**
@@ -66,7 +71,7 @@ class CacheFile implements CacheInterface
      */
 	public function remove($key){
 		$path = $this->path($key);
-		return $this->files->delete($path);
+		return $this->handler->delete($path);
 	}
 	
     /**
@@ -75,7 +80,7 @@ class CacheFile implements CacheInterface
      * @return bool
      */
 	public function clear(){
-		return $this->files->delete($this->directory);
+		return $this->handler->delete($this->directory);
 	}
 	
     /**

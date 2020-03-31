@@ -86,3 +86,19 @@ function cookie(){
 		return $cookie;
 	}
 }
+
+function language($key = null,$default = null){
+	if($key == null){
+		return app('language');
+	}
+	
+	if(is_array($key)){
+		app('language')->set($key);
+	}
+	
+	return app('language')->get($key, $default);
+}
+
+function L($key = null,$default = null){
+	return language($key,$default);
+}

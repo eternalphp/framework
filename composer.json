@@ -34,7 +34,10 @@
 			"framework\\Debug\\": "src/framework/Debug/",
 			"framework\\Exception\\": "src/framework/Exception/",
 			"framework\\View\\": "src/framework/View/",
-			"framework\\Controller\\": "src/framework/Controller/"
+			"framework\\Controller\\": "src/framework/Controller/",
+			"framework\\Pipeline\\": "src/framework/Pipeline/",
+			"framework\\Logger\\": "src/framework/Logger/",
+			"framework\\Language\\": "src/framework/Language/"
 		},
 		"files":[
 			"src/framework/Foundation/functions.php"
