@@ -9,6 +9,7 @@ use framework\Filesystem\Filesystem;
 use framework\Session\Session;
 use framework\Cookie\Cookie;
 use framework\Logger\Logger;
+use framework\Language\Language;
 
 class Application
 {
@@ -18,14 +19,18 @@ class Application
 	private $container;
 	private $basePath;
 	private $services = [];
+	static $instance = null;
 	
 	public function __construct(){
 		$this->basePath = ROOT;
 		$this->container = Container::getInstance();
-		$this->container->bind('Filesystem',Filesystem::class);
-		$this->load();
-		$this->loadRoute();
-		$this->init();
+	}
+	
+	public static function getInstance(){
+		if(self::$instance == null){
+			self::$instance = new self();
+		}
+		return self::$instance;
 	}
 
     /**
@@ -44,30 +49,7 @@ class Application
 		});
 		
 		$this->container->bind('config',new Repository($this->configs));
-		
-		//加载语言包
-		$this->items = array();
-		$this->container['Filesystem']->getFiles($this->languagePath(),function($filename){
-			$items = require($filename);
-			$name = $this->container['Filesystem']->name($filename);
-			$this->items = array_merge($this->items,[$name=>$items]);
-		});
-		
-		$this->container->bind('language',new Language($this->items));
-		
-		//绑定基本类
-		$registers = $this->config("app.aliases");
-		if($registers){
-			foreach($registers as $key=>$class){
-				$this->container->bind($key,$class);
-			}
-		}
-		
-		//注册服务
-		$services = $this->config("app.providers");
-		if($services){
-			array_map($this->register,$services);
-		}
+
 	}
 	
     /**
@@ -77,63 +59,14 @@ class Application
      */
 	public function Start(){
 		
-		try{
-			
-			if(php_sapi_name() == 'cli'){
-				$argv = $_SERVER["argv"];
-				array_shift($argv);
-				$route = Router::query($argv[0],'COMMAND');
-			}else{
-				$route = Router::query($_SERVER["REQUEST_URI"],$_SERVER["REQUEST_METHOD"]);
-			}
-			
-			if($route){
-				if($route->isCallback()){
-					return $route->callback();
-				}else{
-					$controller = $route->getController();
-					$method = $route->getAction();
-					$this->container->instance('route',$route);
-				}
-				
-				$class = $route->getNamespacePath();
-				$this->container->bind($class,new $class());
-				$app = $this->container->get($class);
-				if(method_exists($app,$method)){
-					
-					//解析方法中的参数
-					$methodParams = $this->container->getMethodParams($route->getNamespacePath(),$method);
-					$params = $route->getParams();
-					if($params){
-						$methodParams = array_merge($methodParams,$params);
-					}
-					
-					$before_method = sprintf("before_%s",$method);
-					$after_method = sprintf("after_%s",$method);
-					if(method_exists($app,$before_method)){
-						call_user_func(array($app,$before_method),[]);
-					}
-					
-					call_user_func_array(array($app,$method),$methodParams);//支持自动传参
-					
-					if(method_exists($app,$after_method)){
-						call_user_func(array($app,$after_method),[]);
-					}
-				}else{
-					throw new Exception("$controller can not found $method");
-				}
-				
-			}else{
-				if(php_sapi_name() != 'cli'){
-					header('HTTP/1.1 404 Not Found');
-				}else{
-					exit("No find command");
-				}
-			}
-			
-		}catch(Exception $e){
-			$e->showError();
-		}
+		$this->container->bind('Filesystem',Filesystem::class);
+		$this->load();
+		$this->loadService();
+		$this->loadLanguage();
+		$this->loadRoute();
+		$this->init();
+		$this->dispatch();
+		
 	}
 	
     /**
@@ -296,6 +229,111 @@ class Application
 		$this->container['Filesystem']->getFiles($this->routePath(),function($filename){
 			require($filename);
 		});
+	}
+	
+    /**
+     * 路由调度
+     *
+     * @return void
+     */
+	public function dispatch(){
+		
+		try{
+			
+			if(php_sapi_name() == 'cli'){
+				$argv = $_SERVER["argv"];
+				array_shift($argv);
+				$route = Router::query($argv[0],'COMMAND');
+			}else{
+				$route = Router::query($_SERVER["REQUEST_URI"],$_SERVER["REQUEST_METHOD"]);
+			}
+			
+			if($route){
+				if($route->isCallback()){
+					return $route->callback();
+				}else{
+					$controller = $route->getController();
+					$method = $route->getAction();
+					$this->container->instance('route',$route);
+				}
+				
+				$class = $route->getNamespacePath();
+				$this->container->bind($class,new $class());
+				$app = $this->container->get($class);
+				if(method_exists($app,$method)){
+					
+					//解析方法中的参数
+					$methodParams = $this->container->getMethodParams($route->getNamespacePath(),$method);
+					$params = $route->getParams();
+					if($params){
+						$methodParams = array_merge($methodParams,$params);
+					}
+					
+					$before_method = sprintf("before_%s",$method);
+					$after_method = sprintf("after_%s",$method);
+					if(method_exists($app,$before_method)){
+						call_user_func(array($app,$before_method),[]);
+					}
+					
+					call_user_func_array(array($app,$method),$methodParams);//支持自动传参
+					
+					if(method_exists($app,$after_method)){
+						call_user_func(array($app,$after_method),[]);
+					}
+				}else{
+					throw new Exception("$controller can not found $method");
+				}
+				
+			}else{
+				if(php_sapi_name() != 'cli'){
+					header('HTTP/1.1 404 Not Found');
+				}else{
+					exit("No find command");
+				}
+			}
+			
+		}catch(Exception $e){
+			$e->showError();
+		}
+	}
+	
+    /**
+     * load language config
+     *
+     * @return void
+     */
+	public function loadLanguage(){
+ 		$this->items = array();
+		$this->container['Filesystem']->getFiles($this->languagePath(),function($filename){
+			$items = require($filename);
+			$name = $this->container['Filesystem']->name($filename);
+			$this->items = array_merge($this->items,[$name=>$items]);
+		});
+		
+		$this->container->bind('language',new Language($this->items));
+	}
+	
+    /**
+     * load service
+     *
+     * @return void
+     */
+	public function loadService(){
+		//绑定基本类
+		$registers = $this->config("app.aliases");
+		if($registers){
+			foreach($registers as $key=>$class){
+				$this->container->bind($key,$class);
+			}
+		}
+		
+		//注册服务
+		$services = $this->config("app.providers");
+		if($services){
+			foreach($services as $service){
+				$this->register($service);
+			}
+		}
 	}
 	
     /**

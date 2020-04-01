@@ -4,6 +4,7 @@ namespace framework\Logger;
 
 use framework\Foundation\Application;
 use framework\Http\Request;
+use framework\View\View;
 
 class Logger{
 	
@@ -70,9 +71,9 @@ class Logger{
 	private $app;
 	private $request;
 	
-	public function __construct(Application $app,Request $request){
-		
-		$this->app = $app;
+	public function __construct(Request $request){
+		error_reporting(0);
+		$this->app = Application::getInstance();
 		$this->request = $request;
 		
 	}
@@ -86,10 +87,10 @@ class Logger{
 	public function init(){
 		
 		//错误处理绑定函数
-		set_error_handler(array(__CLASS__, 'errorHandler'));
+		set_error_handler(array($this, 'errorHandler'));
 		
 		//注册页面脚本终止前回调函数
-		register_shutdown_function(array(__CLASS__, 'shutdonwHandler'));
+		register_shutdown_function(array($this, 'shutdonwHandler'));
 	}
 
 
@@ -238,9 +239,9 @@ class Logger{
 	 */
 	private function record($message, $level = self::ERROR){
 		// 按日志级别来记录
-		if(in_array($level, self::$levels)){
+		if(in_array($level, $this->levels)){
 			$now = date("Y-m-d H:i:s");
-			$this->logs[] = implode($this->getSeparator(),array("[$row]",$leave,$message));
+			$this->logs[] = implode($this->getSeparator(),array("[$now]",$level,$message));
 		}
 	}
 
@@ -264,7 +265,7 @@ class Logger{
 				}
 			}
 			
-			file_put_contents($filename,implode("\r\n",$this->logs),FILE_APPEND);
+			file_put_contents($filename,implode("\r\n",$this->logs)."\r\n",FILE_APPEND);
 		}
 	}
 	
@@ -275,18 +276,19 @@ class Logger{
 	 */
 	private function writeAccessLog(){
 		$now = date("Y-m-d H:i:s");
-		RunTime::stop();
+		//RunTime::stop();
 		$line = array();
 		$line[] = "[$now]";
 		$line[] = $this->request->getIp();
 		$line[] = $this->request->fullUrl();
-		$line[] = RunTime::spent();
+		//$line[] = RunTime::spent();
 		$access = implode(self::getSeparator(),$line);
 		$path = $this->getAccessPath($this->getPath());
 		if(!file_exists($path)){
 			mkdir($path,0777,true);
 		}
-		file_get_contents($path . $this->getFilename(),$access ."\r\n",FILE_APPEND);
+		$filename = $path . $this->getFilename();
+		file_put_contents($filename,$access ."\r\n",FILE_APPEND);
 	}
 
 	/**
@@ -296,7 +298,12 @@ class Logger{
 	 */
 	public function output(){
 		if($this->logs){
-			print_r($this->logs);
+			$view = new View();
+			$view->templatePath(__DIR__);
+			$view->cachePath(__DIR__ . "/cache/");
+			$view->assign("title","NOTICE");
+			$view->assign("message",implode("<br><br>",$this->logs));
+			$view->display("views.notice");
 		}
 	}
 
@@ -331,13 +338,15 @@ class Logger{
 		$text1 = $text2 = null;
 		$traceArr = (isset($this->traces['debug_backtrace']) && !empty($this->traces['debug_backtrace'])) ? $this->traces['debug_backtrace'] : debug_backtrace();
 		if(!empty($this->traces['file'])){
-			$text1 .= '<div class="info"><h1>('.$this->traces['error_no'].')'.$this->traces['message'].'</h1><div class="info2">FILE: '.$this->traces['file'].' &#12288;LINE:'.$this->traces['line'].'</div></div>';
+			$text1 .= '<div class="info"><h1>('.$this->traces['errno'].')'.$this->traces['message'].'</h1><div class="info2">FILE: '.$this->traces['file'].' &#12288;LINE:'.$this->traces['line'].'</div></div>';
 		}else{
 			$text1 .= '<div class="info"><h1>'.$this->traces['message'].'</h1></div>';
 		}
 		if(is_array($traceArr)){
 			$text2 = '<div class="info"><p><strong>PHP Debug</strong></p><table cellpadding="5" cellspacing="1" width="100%" class="table"><tr class="bg2"><td>No.</td><td>File</td><td>Line</td><td>Code</td></tr>';
+			
 			$dapArr = array('halt()', 'Log::errorHandler()', 'Log::writeDebugLog()', 'Log::showDebugBackTrace()');
+			
 			foreach ($traceArr as $k=>$v){
 				$file = isset($v['file']) ? $v['file'] : '';
 				$line = isset($v['line']) ? $v['line'] : '';
@@ -348,6 +357,7 @@ class Logger{
 				if(in_array($callText, $dapArr)) continue;
 				$text2 .= "<tr class='bg1'><td>".($k+1)."</td><td>{$file}</td><td>{$line}</td><td>{$callText}</td></tr>";
 			}
+			
 			$text2 .= '</table></div><div class="help"><a href="http://www.easyz360.com">EasyPHP</a><sup>2.5</sup></div>';
 		}
 		
