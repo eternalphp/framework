@@ -38,7 +38,8 @@
 			"framework\\Pipeline\\": "src/framework/Pipeline/",
 			"framework\\Logger\\": "src/framework/Logger/",
 			"framework\\Language\\": "src/framework/Language/",
-			"framework\\Validate\\": "src/framework/Validate/"
+			"framework\\Validate\\": "src/framework/Validate/",
+			"framework\\Event\\": "src/framework/Event/"
 		},
 		"files":[
 			"src/framework/Foundation/functions.php"
