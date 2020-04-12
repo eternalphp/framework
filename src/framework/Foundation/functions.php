@@ -147,3 +147,7 @@ function L($key = null,$default = null){
 	}
 	
 }
+
+function response($content = '', $status = 200, $headers = []){
+	return app('response',array('content'=>$content,'status'=>$status,'headers'=>$headers));
+}
