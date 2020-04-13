@@ -111,7 +111,7 @@ class Logger{
 			$this->errorHandler($error['type'], $error['message'], $error['file'], $error['line']);
 		}
 		
-		if($this->app->config("config.access_log") == 1){
+		if($this->app->config("app.log") == 1){
 			$this->writeAccessLog(); // 记录访问日志
 		}
 	}
