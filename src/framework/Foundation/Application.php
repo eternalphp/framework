@@ -258,8 +258,8 @@ class Application
 				}
 				
 				$class = $route->getNamespacePath();
-				$this->container->bind($class,new $class());
-				$app = $this->container->get($class);
+				$this->container->bind('controller',$class);
+				$app = $this->container->get('controller');
 				if(method_exists($app,$method)){
 					
 					//解析方法中的参数

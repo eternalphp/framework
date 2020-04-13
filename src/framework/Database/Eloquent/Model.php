@@ -16,12 +16,32 @@ class Model
 	private $config = null;
 	private $sql;
 	
-	public function __construct($config){
-		$this->config = $config;
-		if(isset($config["prefix"])){
-			$this->prefix = $config["prefix"];
+	public function __construct($config = array()){
+		
+		if($config){
+			$this->config = $config;
+		}else{
+			$config = Config("database");
+			$this->config = array(
+				'driver' => $config['DB_DRIVER'],
+				'servername' => $config['DB_HOST'],
+				'username' => $config['DB_USER'],
+				'password' => $config['DB_PWD'],
+				'database' => $config['DB_NAME'],
+				'port' => $config['DB_PORT'],
+				'prefix' => $config['DB_PREFIX']
+			);
 		}
+		
+		if(isset($this->config["prefix"])){
+			$this->prefix = $this->config["prefix"];
+		}
+		
 		$this->connect();
+		
+		if($this->table != null){
+			$this->table($this->table);
+		}
 	}
 	
     /**
