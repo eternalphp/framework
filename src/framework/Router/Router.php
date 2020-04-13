@@ -171,7 +171,11 @@ class Router{
 	 * @return self;
 	 */
 	public static function prefix($prefix){
-		self::$prefix = $prefix;
+		if(self::$prefix != ''){
+			self::$prefix = implode("/",array(self::$prefix,$prefix));
+		}else{
+			self::$prefix = $prefix;
+		}
 		return self::getInstance();
 	}
 	
@@ -183,8 +187,7 @@ class Router{
 	public static function name($name){
 		self::$currRoute->alias($name);
 		return self::getInstance();
-	}
-	
+	}	
 	/**
 	 * 返回路由对象集合
 	 * @return array;
