@@ -113,6 +113,11 @@ class Logger{
 		
 		if($this->app->config("app.log") == 1){
 			$this->writeAccessLog(); // 记录访问日志
+			$this->writeLog(); // 记录系统日志
+		}
+		
+		if($this->app->config("app.debug") == 1){
+			$this->output();
 		}
 	}
 	
@@ -173,14 +178,6 @@ class Logger{
 		$errmsg = str_replace(chr(13).chr(10), '', $errmsg);
 		$message = implode($separator,array("[$errno]",$errmsg,$file,$line));
 		$this->record($message, $level);
-		
-		if($this->app->config("app.log") == 1){
-			$this->writeLog(); // 记录系统日志
-		}
-		
-		if($this->app->config("app.debug") == 1){
-			$this->output();
-		}
 	}
 
 
