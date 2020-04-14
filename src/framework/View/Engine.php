@@ -170,7 +170,7 @@ abstract class Engine
 		
 		//继承模板时，先解析标签
 		
-		preg_match_all("/@section\([\'\"]+(.*?)[\'\"]+,+[\'\"]+(.*?)[\'\"]+\)/is",$this->tContent,$matchs);
+		preg_match_all("/@section\([\'\"]+(.*?)[\'\"]+,+[\'\"]+(.*?)[\'\"]+\)/i",$this->tContent,$matchs);
 		if($matchs[0]){
 			
 			foreach($matchs[1] as $k=>$val){
@@ -183,11 +183,16 @@ abstract class Engine
 		
 		preg_match_all("/@section\([\'\"]+([^,]+)[\'\"]+\)(.*?)@endsection/is",$this->tContent,$matchs);
 		if($matchs[0]){
-			foreach($matchs[1] as $k=>$val){
-				$this->sections[$val] = array(
-					'tag'=>$matchs[0][$k],
-					'content'=>$matchs[2][$k]
-				);
+			
+			$section = $matchs[0][0];
+			if($section != ''){
+				preg_match_all("/@section\([\'\"]+(.*?)[\'\"]+\)(.*?)@endsection/is",$section,$matchs);
+				foreach($matchs[1] as $k=>$val){
+					$this->sections[$val] = array(
+						'tag'=>$matchs[0][$k],
+						'content'=>$matchs[2][$k]
+					);
+				}
 			}
 		}
 		
@@ -221,6 +226,8 @@ abstract class Engine
 				if(isset($this->sections[$val])){
 					$content = str_replace("@parent",$matchs[2][$k],$this->sections[$val]["content"]);
 					$this->tContent = str_replace($matchs[0][$k],$content,$this->tContent);
+				}else{
+					$this->tContent = str_replace($matchs[0][$k],"",$this->tContent);
 				}
 			}
 		}

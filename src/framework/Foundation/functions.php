@@ -151,3 +151,72 @@ function L($key = null,$default = null){
 function response($content = '', $status = 200, $headers = []){
 	return app('response',array('content'=>$content,'status'=>$status,'headers'=>$headers));
 }
+
+// success({'errcode':0,'errmsg':'ok'},'parent.callback');
+function success($res = array(),$callback = 'json'){
+	
+	if(is_string($res) && $res != ''){
+		$errmsg = $res;
+		$res = array();
+		$res['errmsg'] = $errmsg;
+		$callback = 'parent.callback';
+	}
+	
+	if(!isset($res['errcode'])){
+		$res['errcode'] = 0;
+	}
+	if(!isset($res['errmsg'])){
+		$res['errmsg'] = 'success';
+	}
+	$res = json_encode($res);
+	
+	if($callback == 'json'){
+		return $res;
+	}else{
+		echo "<script>$callback(".$res.");</script>";
+	}
+}
+
+function fail($res = array(),$callback = 'json'){
+	
+	if(is_string($res) && $res != ''){
+		$errmsg = $res;
+		$res = array();
+		$res['errmsg'] = $errmsg;
+		$callback = 'parent.callback';
+	}
+	
+	if(!isset($res['errcode'])){
+		$res['errcode'] = 200;
+	}
+	if(!isset($res['errmsg'])){
+		$res['errmsg'] = 'fail';
+	}
+	$res = json_encode($res);
+	
+	if($callback == 'json'){
+		return $res;
+	}else{
+		echo "<script>$callback(".$res.");</script>";
+	}
+}
+
+function request($name,$value = false){
+	if(isset($_POST[$name])){
+		return $_POST[$name];
+	}elseif(isset($_GET[$name])){
+		return $_GET[$name];
+	}else{
+		return $value;
+	}
+}
+
+function requestInt($name,$value = false){
+	if(isset($_POST[$name])){
+		return intval($_POST[$name]);
+	}elseif(isset($_GET[$name])){
+		return intval($_GET[$name]);
+	}else{
+		return $value;
+	}
+}
