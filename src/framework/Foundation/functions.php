@@ -152,6 +152,10 @@ function response($content = '', $status = 200, $headers = []){
 	return app('response',array('content'=>$content,'status'=>$status,'headers'=>$headers));
 }
 
+function csrf_token(){
+	return session()->token();
+}
+
 // success({'errcode':0,'errmsg':'ok'},'parent.callback');
 function success($res = array(),$callback = 'json'){
 	
@@ -219,4 +223,146 @@ function requestInt($name,$value = false){
 	}else{
 		return $value;
 	}
+}
+
+function url($path,$params = array()){
+	$path = '/'.trim($path,'/');
+	if($params){
+		$path = $path . "?" . urldecode(http_build_query($params));
+	}
+	return $path;
+}
+
+/*
+功能：用来过滤字符串和字符串数组，防止被挂马和sql注入
+参数$data，待过滤的字符串或字符串数组，
+$force为true，忽略get_magic_quotes_gpc
+*/
+function sql_in($data,$force = false){
+	if(is_string($data)){
+		
+		$data = trim(htmlspecialchars($data,ENT_QUOTES));
+		$data = trim($data);
+		if(($force == true) || (!get_magic_quotes_gpc())){
+		   $data = addslashes($data);
+		}
+		return  $data;
+		
+	}else if(is_array($data)){
+		
+		foreach($data as $key=>$value){
+			 $data[$key] = sql_in($value,$force);
+		}
+		return $data;
+		
+	}else{
+		return $data;
+	}	
+}
+
+//用来还原字符串和字符串数组，把已经转义的字符还原回来
+function sql_out($data){
+	if(is_string($data)){
+		
+		return $data = stripslashes(htmlspecialchars_decode($data,ENT_QUOTES));
+		
+	}else if(is_array($data)){
+		
+		foreach($data as $key=>$value){
+			$data[$key] = sql_out($value);
+		}
+		return $data;
+		
+	}else{
+		
+		return $data;
+		
+	}	
+}
+
+//html代码输入
+function html_in($str){
+	$search = array ("'<script[^>]*?>.*?</script>'si",  // 去掉 javascript
+					 "'<iframe[^>]*?>.*?</iframe>'si", // 去掉iframe
+					);
+	$replace = array ("",
+					  "",
+					);			  
+	$str = @preg_replace ($search, $replace, $str);
+	$str = htmlspecialchars($str);
+   	if(!get_magic_quotes_gpc()) 
+	{
+		$str = addslashes($str);
+	}
+	return $str;
+}
+
+//html代码输出
+function html_out($str){
+	if(function_exists('htmlspecialchars_decode'))
+		$str = htmlspecialchars_decode($str);
+	else
+		$str = html_entity_decode($str);
+
+    $str = stripslashes($str);
+	return $str;
+}
+
+function remainTime($date){
+	$time = strtotime($date) - time();
+	if($time > 0){
+		$day    = floor($time / 60 / 60 / 24);
+		$hour   = floor($time / 60 / 60);
+		$minute = floor($time / 60);
+		if($day > 0){
+			$time	= $time%86400;
+			return $day.'天'.gmstrftime("%Hh%Mm%Ss", $time);
+		}elseif($hour > 0){
+			return gmstrftime("%Hh%Mm%Ss",$time);
+		}elseif($minute > 0){
+			return gmstrftime("%Mm%Ss",$time);
+		}else{
+			return gmstrftime("%Ss",$time);
+		}
+	}else{
+		return false;
+	}
+}
+
+/**
+ * 时间差计算
+ *
+ * @param Timestamp $time 时间差
+ * @return String Time Elapsed
+ */
+function time2Units($date){
+	$time   = time() - strtotime($date);
+	$year   = floor($time / 60 / 60 / 24 / 365);
+	$time  -= $year * 60 * 60 * 24 * 365;
+	$month  = floor($time / 60 / 60 / 24 / 30);
+	$time  -= $month * 60 * 60 * 24 * 30;
+	$week   = floor($time / 60 / 60 / 24 / 7);
+	$time  -= $week * 60 * 60 * 24 * 7;
+	$day    = floor($time / 60 / 60 / 24);
+	$time  -= $day * 60 * 60 * 24;
+	$hour   = floor($time / 60 / 60);
+	$time  -= $hour * 60 * 60;
+	$minute = floor($time / 60);
+	$time  -= $minute * 60;
+	$second = $time;
+	$elapse = '';
+	 
+	$unitArr = array('年前'=>'year','个月前'=>'month','周前'=>'week','天前'=>'day','小时前'=>'hour','分钟前'=>'minute','秒前'=>'second');
+
+	foreach ($unitArr as $cn => $u){
+		if ($year > 0) {//大于一年显示年月日
+			$elapse = date('Y/m/d',time()-$time);
+			break;
+		}else if ($$u > 0){
+			$elapse = $$u . $cn;
+			break;
+		}
+	}
+ 
+	return $elapse;
 }

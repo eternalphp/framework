@@ -4,6 +4,7 @@ namespace framework\Session;
 
 use framework\Session\SessionManager;
 use framework\Support\Arr;
+use framework\Support\Str;
 
 class Session
 {
@@ -19,6 +20,20 @@ class Session
 		$this->sessionId = session_id();
 		$this->sessionData = $this->getSessionHandle();
 		$this->Arr = new Arr($this->sessionData);
+		
+        if (! $this->has('_token')) {
+            $this->regenerateToken();
+        }
+	}
+	
+    /**
+     * has session
+     *
+     * @param string $key
+     * @return bool
+     */
+	public function has($key){
+		return ($this->get($key) != null) ? true : false;
 	}
 	
     /**
@@ -100,5 +115,24 @@ class Session
 	public function generateSessionId(){
 		return session_id();
 	}
+	
+    /**
+     * Regenerate the CSRF token value.
+     *
+     * @return void
+     */
+	public function regenerateToken(){
+		$this->put('_token', Str::random(40));
+	}
+	
+    /**
+     * Get the CSRF token value.
+     *
+     * @return string
+     */
+    public function token()
+    {
+        return $this->get('_token');
+    }
 }
 ?>
