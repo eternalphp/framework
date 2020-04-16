@@ -21,7 +21,7 @@ class Model
 		if($config){
 			$this->config = $config;
 		}else{
-			$config = Config("database");
+			$config = config("database");
 			$this->config = array(
 				'driver' => $config['DB_DRIVER'],
 				'servername' => $config['DB_HOST'],
@@ -36,8 +36,6 @@ class Model
 		if(isset($this->config["prefix"])){
 			$this->prefix = $this->config["prefix"];
 		}
-		
-		$this->connect();
 		
 		if($this->table != null){
 			$this->table($this->table);
@@ -178,7 +176,7 @@ class Model
 		}else{
 			$sql = preg_replace("/select\s+(.*?)\s+from/","select count(*) as count from",$sql);
 		}
-		$res = $this->connector->find($sql);
+		$res = $this->connect()->find($sql);
 		
 		if($res){
 			return $res['count'];
@@ -251,7 +249,7 @@ class Model
      */
 	final public function select(){
 		$this->sql = $this->getSql();
-		return $this->connector->query($this->sql)->select();
+		return $this->connect()->query($this->sql)->select();
 	}
 	
     /**
@@ -302,7 +300,10 @@ class Model
      *
      * @return $this
      */
-	final public function find(){
+	final public function find($value = null){
+		if($this->primaryKey != null && $value != null){
+			$this->where($this->primaryKey,intval($value));
+		}
 		$this->sql = $this->getSql();
 		return $this->connect()->query($this->sql)->find();
 	}
@@ -366,7 +367,7 @@ class Model
 		if(is_array($data)){
 			$sqls = array();
 			foreach($data as $key=>$val){
-				$val = sprintf("'%s'",$this->connector->escape(trim($val)));
+				$val = sprintf("'%s'",$this->connect()->escape(trim($val)));
 				$sqls[] = sprintf("`%s`=%s",$key,$val);
 			}
 			$this->sql = sprintf("UPDATE %s SET %s where %s",$table,implode(',',$sqls),$where);

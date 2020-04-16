@@ -3,7 +3,7 @@
 namespace framework\Database\Connection;
 
 use framework\Database\Connection\ConnectorInterface;
-
+use framework\Exception\DatabaseException;
 
 class MySqliConnector implements ConnectorInterface
 {
@@ -33,7 +33,7 @@ class MySqliConnector implements ConnectorInterface
 	public function connect(){
 		$this->connection = mysqli_connect($this->servername,$this->username,$this->password,$this->database,$this->port);
 		if(!$this->connection){
-			$this->error("Could not connect");
+			$this->error("Could not connect：". mysqli_connect_error());
 		}
 		$this->charset($this->charset);
 	}
@@ -169,8 +169,12 @@ class MySqliConnector implements ConnectorInterface
      * @return void
      */
 	public function error($message = null){
-		$error = mysqli_error($this->connection);
-		exit(sprintf("%s：%s",$message,$error));
+		if($this->connection != null){
+			$error = mysqli_error($this->connection);
+		}else{
+			$error = mysqli_connect_error();
+		}
+		throw new DatabaseException(sprintf("%s：%s",$message,$error));
 	}
 	
 	public function __destruct(){
