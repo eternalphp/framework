@@ -21,7 +21,7 @@ class Model
 		if($config){
 			$this->config = $config;
 		}else{
-			$config = config("database");
+			$config = Config("database");
 			$this->config = array(
 				'driver' => $config['DB_DRIVER'],
 				'servername' => $config['DB_HOST'],
@@ -176,7 +176,7 @@ class Model
 		}else{
 			$sql = preg_replace("/select\s+(.*?)\s+from/","select count(*) as count from",$sql);
 		}
-		$res = $this->connect()->find($sql);
+		$res = $this->connect()->query($sql)->find();
 		
 		if($res){
 			return $res['count'];
@@ -214,7 +214,7 @@ class Model
 		$params = array();
 		$page = isset($_GET[$name]) ? intval($_GET[$name]) : 1;
 		$offset = ($page - 1) * $pageSize;
-		$this->options['limit'] = sprintf("%d,%d",$offset,$pageSize);
+		$this->options['limit'] = sprintf("limit %d,%d",$offset,$pageSize);
 		$this->pages = array('count'=>$rows,'total'=>$total);
 		if($page > $total || $page < 1){
 			return false;
@@ -366,9 +366,11 @@ class Model
 
 		if(is_array($data)){
 			$sqls = array();
-			foreach($data as $key=>$val){
-				$val = sprintf("'%s'",$this->connect()->escape(trim($val)));
-				$sqls[] = sprintf("`%s`=%s",$key,$val);
+			foreach($data as $field=>$val){
+				if($this->hasField($field)){
+					$val = sprintf("'%s'",$this->connector->escape(trim($val)));
+					$sqls[] = sprintf("`%s`=%s",$field,$val);
+				}
 			}
 			$this->sql = sprintf("UPDATE %s SET %s where %s",$table,implode(',',$sqls),$where);
 		}else{
@@ -523,13 +525,15 @@ class Model
 		$values = array();
 		if($row){
 			foreach($row as $field=>$val){
-				if(is_array($val)){
-					$values[] = sprintf("'%s'",json_encode($val));
-				}else{
-					if(is_null($val)){
-						$values[] = 'NULL';
+				if($this->hasField($field)){
+					if(is_array($val)){
+						$values[] = sprintf("'%s'",json_encode($val));
 					}else{
-						$values[] = sprintf("'%s'",$this->connector->escape(trim($val)));
+						if(is_null($val)){
+							$values[] = 'NULL';
+						}else{
+							$values[] = sprintf("'%s'",$this->connector->escape(trim($val)));
+						}
 					}
 				}
 			}

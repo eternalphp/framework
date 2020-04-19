@@ -228,14 +228,14 @@ abstract class Engine
 			}
 		}
 		
-		preg_match_all("/@if\s?\((.*?)\)/is",$this->tContent,$matchs);
+		preg_match_all("/@if\s?\((.*?)\)\s+/is",$this->tContent,$matchs);
 		if($matchs[0]){
 			foreach($matchs[1] as $k=>$val){
 				$this->tContent = str_replace($matchs[0][$k],sprintf('<?php if(%s) {?>',$val),$this->tContent);
 			}
 		}
 		
-		preg_match_all("/@elseif\s?\((.*?)\)/is",$this->tContent,$matchs);
+		preg_match_all("/@elseif\s?\((.*?)\)\s+/is",$this->tContent,$matchs);
 		if($matchs[0]){
 			foreach($matchs[1] as $k=>$val){
 				$this->tContent = str_replace($matchs[0][$k],sprintf('<?php } elseif(%s) {?>',$val),$this->tContent);
@@ -256,7 +256,7 @@ abstract class Engine
 			}
 		}
 		
-		preg_match_all("/@foreach\((.*?)\)/is",$this->tContent,$matchs);
+		preg_match_all("/@foreach\((.*?)\)\s+/is",$this->tContent,$matchs);
 		if($matchs[0]){
 			foreach($matchs[1] as $k=>$val){
 				$this->tContent = str_replace($matchs[0][$k],sprintf('<?php foreach(%s) {?>',$val),$this->tContent);
