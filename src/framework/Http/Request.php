@@ -4,22 +4,23 @@ namespace framework\Http;
 
 class Request{
 	
+	private static $data = [];
+	private $get;
+	private $post;
+	private $cookies;
+	private $env;
+	
 	public function __construct(){
-
+        $this->get = $this->filter($_GET);
+        $this->post = $this->filter($_POST, INPUT_POST);
+        $this->cookies = $this->filter($_COOKIE, INPUT_COOKIE);
+        $this->env = $this->filter($_ENV, INPUT_ENV);
 	}
 	
-    /**
-     * get value from Server
-     *
-     * @param  string  $name
-     * @param  string  $defaultVal
-     * @return string | array
-     */
 	public function getServer($name = null,$defaultVal = null){
 		if($name == null){
 			return $_SERVER;
 		}else{
-		    
 			if(isset($_SERVER[$name])){
 				return $_SERVER[$name];
 			}
@@ -33,13 +34,6 @@ class Request{
 		}
 	}
 	
-    /**
-     * set value to Server
-     *
-     * @param  string  $name
-     * @param  string  $value
-     * @return void
-     */
 	public function setServer($name,$value = null){
 		if($name != ''){
 			$name = strtoupper($name);
@@ -47,11 +41,6 @@ class Request{
 		}
 	}
 	
-    /**
-     * get host
-     *
-     * @return string
-     */
 	public function host(){
 		if($this->getServer('HTTP_X_REAL_HOST') != null){
 			return $this->getServer('HTTP_X_REAL_HOST');
@@ -91,12 +80,23 @@ class Request{
 	}
 	
 	public function fullUrl(){
-		if($this->scheme() == 'https'){
-			return 'https://'.$this->host().$this->url();
-		}else{
-			return 'http://'.$this->host().$this->url();
-		}
+		$prfix = isset($_SERVER['HTTPS']) ? 'https://' : 'http://';
+		return $prfix . $this->host() . $this->url();
 	}
+	
+    /**
+     * @param $params
+     * @param int $type
+     * @return array
+     */
+    private function filter($params, $type = INPUT_GET)
+    {
+        $ret = [];
+        foreach ($params as $key => $param) {
+            $ret[$key] = filter_input($type, $key, FILTER_DEFAULT);
+        }
+        return $ret;
+    }
 	
 	public function scheme(){
 		return $this->isSSL() ? 'https' : 'http';
@@ -116,10 +116,12 @@ class Request{
 	}
 	
 	public function isAjax(){
-		if(strtolower($this->getServer('HTTP_X_REQUESTED_WITH')) == 'xmlhttprequest'){
-			return true;
+		
+		if(!strtolower($this->getServer('HTTP_X_REQUESTED_WITH')) == 'xmlhttprequest'){
+			return false;
 		}
-		return false;
+		
+		return true;
 	}
 	
 	public function method(){
@@ -159,17 +161,52 @@ class Request{
 	}
 	
 	public function get($name,$defaultVal = null){
-		if(isset($_GET[$name])){
-			return $_GET[$name];
+		if(isset($this->get[$name])){
+			return $this->get[$name];
+		}
+		return $defaultVal;
+	}
+	
+	public function form($name,$defaultVal = null){
+		if(isset($this->post[$name])){
+			return $this->post[$name];
 		}
 		return $defaultVal;
 	}
 	
 	public function input($name,$defaultVal = null){
-		if(isset($_POST[$name])){
-			return $_POST[$name];
+		$data = $this->getData();
+		if(isset($data[$name])){
+			return $data[$name];
 		}
 		return $defaultVal;
+	}
+	
+	public function getAjaxData(){
+		$data = array();
+		if($this->isAjax()){
+			$json = file_get_contents('php://input');
+			if($json != ''){
+				$data = json_decode($json,true);
+			}
+		}
+		return $data;
+	}
+	
+	public function getData(){
+		$data = $this->getAjaxData();
+		$data = array_merge($this->get,$this->post,Request::$data,$data);
+		return $data;
+	}
+	
+	public function merge(array $input){
+		Request::$data = array_merge(Request::$data,$input);
+		return $this;
+	}
+	
+	public function all(){
+		$data = $this->getData();
+		return $data;
 	}
 	
 	public function toJson($data = array()){
@@ -178,17 +215,6 @@ class Request{
 	
 	public function toArray($json){
 		return json_decode($json,true);
-	}
-	
-	public function all($name = null,$defaultVal = null){
-		if($name == null){
-			return $_REQUEST;
-		}else{
-			if(isset($_REQUEST[$name])){
-				return $_REQUEST[$name];
-			}
-			return $defaultVal;
-		}
 	}
 	
 	public function agent(){
@@ -209,6 +235,7 @@ class Request{
 	
 	public function redirect($url){
 		header("location:$url");
+		exit;
 	}
 }
 ?>

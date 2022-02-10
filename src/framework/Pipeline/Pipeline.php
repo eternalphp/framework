@@ -6,8 +6,8 @@ use Closure;
 use Exception;
 use Throwable;
 
-class Pipeline
-{
+class Pipeline{
+	
     protected $passable;
 
     protected $pipes = [];
@@ -32,8 +32,7 @@ class Pipeline
      */
     public function through($pipes)
     {
-        $pipes = is_array($pipes) ? $pipes : func_get_args();
-		$this->pipes = array_merge($this->pipes,$pipes);
+        $this->pipes = is_array($pipes) ? $pipes : func_get_args();
         return $this;
     }
 
@@ -47,21 +46,16 @@ class Pipeline
         $pipeline = array_reduce(
             array_reverse($this->pipes),
             $this->carry(),
-			$this->getSlice()
-        );
+            function ($passable) use ($destination) {
+                try {
+                    return $destination($passable);
+                } catch (Exception $e) {
+                    return $this->handleException($passable, $e);
+                }
+            });
 
         return $pipeline($this->passable);
     }
-	
-	public function getSlice(){
-		return function ($passable) use ($destination) {
-			try {
-				return $destination($passable);
-			} catch (Exception $e) {
-				return $this->handleException($passable, $e);
-			}
-		};
-	}
 
     /**
      * 设置异常处理器
@@ -100,5 +94,4 @@ class Pipeline
         }
         throw $e;
     }
-
 }

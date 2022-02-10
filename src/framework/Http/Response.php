@@ -5,14 +5,16 @@ namespace framework\Http;
 use framework\Exception\UnexpectedValueException;
 use framework\Exception\InvalidArgumentException;
 use framework\Cookie\Cookie;
+use Exception;
 
 final class Response{
 	
 	private $options = array();
 	protected $headers = array();
+	protected $contentType = 'text/html';
 	protected $content;
 	protected $version;
-	protected $statusCode;
+	protected $statusCode = 200;
 	protected $statusText;
 	protected $charset;
 	private $level = 0;
@@ -99,11 +101,18 @@ final class Response{
 	
 	public function sendHeaders(){
 		if (!headers_sent()) {
+			
+			$length = strlen($this->content);
+			header(sprintf('HTTP/%s %s %s', $this->version, $this->statusCode, $this->statusText), true, $this->statusCode);
+            header("Content-type: {$this->contentType}");
+            header("Content-length:{$length}");
+            header("Powered-by: songdian.net.cn");
+			
 			foreach ($this->headers as $key => $value) {
 				header($key . ': ' . $value);
 			}
 			
-			header(sprintf('HTTP/%s %s %s', $this->version, $this->statusCode, $this->statusText), true, $this->statusCode);
+			
 		}
 		return $this;
 	}
@@ -262,6 +271,73 @@ final class Response{
     }
 	
     /**
+     * @param $contentType
+     * @return $this
+     */
+    public function setContentType($contentType)
+    {
+        $this->contentType = $contentType;
+        return $this;
+    }
+	
+    /**
+     * @param array $data
+     */
+    public function json(array $data)
+    {
+        $this->setContentType("text/json");
+		$this->setContent(json_encode($data));
+        $this->send();
+    }
+
+    /**
+     * @param array $data
+     */
+    public function jsonp(array $data, $callback = 'callback')
+    {
+        $this->setContentType("text/jsonp");
+        $body = sprintf('%s(%s)', $callback, json_encode($data));
+		$this->setContent($body);
+        $this->send();
+    }
+	
+	/**
+     * @param $tpl
+     * @param $data
+     * @throws \Exception
+     */
+    public function render($tpl, $data)
+    {
+        if (!file_exists($tpl)) {
+            throw new Exception("tpl not exists !");
+        }
+        extract($data);
+        ob_start();
+        require $tpl;
+        $content = ob_get_contents();
+        ob_end_clean();
+		$this->setContent($content);
+        $this->send();
+
+    }
+	
+	public function redirect($url){
+		header("location:$url");
+        exit();
+	}
+	
+    /**
+     * @param DataFormat $dataFormat
+     * @return mixed
+     */
+    public function dataformat(DataFormat $dataFormat)
+    {
+        $data = $dataFormat->format($this);
+        $this->sendHeader();
+        return $data;
+    }
+	
+    /**
      * Get cookie
      *
      * return framework\Cookie\Cookie
@@ -301,6 +377,28 @@ final class Response{
 	public function session($name,$value){
 		$this->getSession()->put($name,$value);
 		return $this;
+	}
+	
+    /**
+     * @param $filename
+	 * @param $data
+     */
+	public function write($filename,$data){
+		if(!file_exists(dirname($filename))){
+			mkdir(dirname($filename),0777,true);
+		}
+		file_put_contents($filename,$data);
+	}
+	
+    /**
+     * @param $filename
+	 * @param $data
+     */
+	public function append($filename,$data){
+		if(!file_exists(dirname($filename))){
+			mkdir(dirname($filename),0777,true);
+		}
+		file_put_contents($filename,$data,FILE_APPEND);
 	}
 	
 	public function compress($data,$level = 0){

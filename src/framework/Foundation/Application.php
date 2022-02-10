@@ -11,7 +11,9 @@ use framework\Cookie\Cookie;
 use framework\Logger\Logger;
 use framework\Language\Language;
 use framework\Http\Request;
+use framework\Http\Response;
 use framework\Pipeline\Pipeline;
+use framework\Middleware\Middleware;
 use Exception;
 
 class Application
@@ -297,8 +299,9 @@ class Application
 				}
 			}
 			
-		}catch(Exception $e){
-			$e->showError();
+		}catch(Exception $ex){
+			//$e->showError();
+			throw new Exception($ex->getMessage());
 		}
 	}
 	
@@ -341,7 +344,7 @@ class Application
 				return $response;
 				
 			}catch(Exception $ex){
-				$ex->showError();
+				throw new Exception($ex->getMessage());
 			}
 		}
 	}

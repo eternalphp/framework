@@ -3,14 +3,14 @@
 namespace framework\Database\Eloquent;
 
 use framework\Database\Connection\Connector;
-use Exception;
-use stdClass;
 use framework\Database\Relation\HasOne;
 use framework\Database\Relation\HasMany;
 use framework\Database\Relation\BelongsTo;
 use framework\Database\Relation\BelongsToMany;
+use Exception;
+use stdClass;
 
-class Model
+final class Model
 {
 	protected $table = null;
 	protected $primaryKey = 'id';
