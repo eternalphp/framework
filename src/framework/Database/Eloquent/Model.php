@@ -10,7 +10,7 @@ use framework\Database\Relation\BelongsToMany;
 use Exception;
 use stdClass;
 
-final class Model
+class Model
 {
 	protected $table = null;
 	protected $primaryKey = 'id';
