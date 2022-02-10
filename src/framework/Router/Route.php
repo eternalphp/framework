@@ -13,6 +13,7 @@ class Route{
 	private $namespace = 'Home';
 	private $methods = ['GET','POST','PUT','DELETE','PATCH','COMMAND'];
 	private $paramPatterns = array();
+	private $middlewares = array();
 	
 	public function __construct($pattern, $callback = null, $methods = []){
 		$this->pattern = $pattern;
@@ -39,7 +40,7 @@ class Route{
 	 * @param string $namespace
 	 * @return $this;
 	 */
-	public function namespace($namespace){
+	public function namespaces($namespace){
 		$this->namespace = $namespace;
 		return $this;
 	}
@@ -200,6 +201,20 @@ class Route{
 	public function prefix($prefix){
 		$this->prefix = $prefix;
 		return $this;
+	}
+	
+	public function middleware($middleware){
+		if(is_array($middleware)){
+			$this->middlewares = array_merge($this->middlewares,$middleware);
+		}else{
+			$this->middlewares = array_merge($this->middlewares,explode(',',$middleware));
+		}
+		
+		return $this;
+	}
+	
+	public function getMiddlewares(){
+		return $this->middlewares;
 	}
 	
 	/**

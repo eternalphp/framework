@@ -24,7 +24,7 @@ class Handler extends Exception{
 	
 	private $path = 'logs';
 	
-	public function __construct($message){
+	public function __construct($message,$code = 0){
 		$this->levels = array(
 			self::E_ERROR => '致命错误(E_ERROR)',
 			self::E_WARNING =>'警告(E_WARNING)',
@@ -40,7 +40,7 @@ class Handler extends Exception{
 			self::E_ALL =>'E_ALL', 
 			self::E_STRICT =>'E_STRICT'
 		);
-		parent::__construct($message);
+		parent::__construct($message,$code);
 	}
    
 	/**

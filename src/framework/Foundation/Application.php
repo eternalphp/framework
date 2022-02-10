@@ -10,6 +10,8 @@ use framework\Session\Session;
 use framework\Cookie\Cookie;
 use framework\Logger\Logger;
 use framework\Language\Language;
+use framework\Http\Request;
+use framework\Pipeline\Pipeline;
 
 class Application
 {
@@ -262,6 +264,8 @@ class Application
 				$app = $this->container->get('controller');
 				if(method_exists($app,$method)){
 					
+					$this->middleware(new Request());
+					
 					//解析方法中的参数
 					$methodParams = $this->container->getMethodParams($route->getNamespacePath(),$method);
 					$params = $route->getParams();
@@ -294,6 +298,50 @@ class Application
 			
 		}catch(Exception $e){
 			$e->showError();
+		}
+	}
+	
+	//中间件处理程序
+	public function middleware(Request $request){
+		$route = $this->container->get('route');
+		$Middlewares = $route->getMiddlewares();
+		if($Middlewares){
+			
+			try{
+			
+				$pipeline = new Pipeline();
+				$pipeline->send($request);
+				
+				foreach($Middlewares as $name){
+					
+					$class = implode("\\",['App','Middleware',$name.'Middleware']);
+					if(!class_exists($class)){
+						$class = implode("\\",['System','Middleware',$name.'Middleware']);
+					}
+					
+					$middleware = new $class;
+					
+					if(!($middleware instanceof Middleware)){
+						throw new Exception("$class is not instanceof Middleware");
+					}
+					
+					//要处理的中间件
+					$pipeline->through(function($request,$next) use ($middleware){
+						return $middleware->handle($request, $next) ;
+					});
+					
+				}
+				
+				//默认处理的方法
+				$response = $pipeline->then(function() use ($request){
+					return new Response();
+				});
+				
+				return $response;
+				
+			}catch(Exception $ex){
+				$ex->showError();
+			}
 		}
 	}
 	

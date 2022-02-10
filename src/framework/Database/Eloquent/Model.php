@@ -3,18 +3,28 @@
 namespace framework\Database\Eloquent;
 
 use framework\Database\Connection\Connector;
-
+use Exception;
+use stdClass;
+use framework\Database\Relation\HasOne;
+use framework\Database\Relation\HasMany;
+use framework\Database\Relation\BelongsTo;
+use framework\Database\Relation\BelongsToMany;
 
 class Model
 {
 	protected $table = null;
 	protected $primaryKey = 'id';
-	private $options = array();
-	private $condition = null;
 	private $prefix = null;
 	private $connector = null;
 	private $config = null;
 	private $sql;
+	protected  $callback = null;
+	private $listenQuery = false;
+	private $buildQuery;
+	protected $timestamps = false;
+    const CREATED_AT = 'createtime';
+    const UPDATED_AT = 'updatetime';
+	protected $relations = [];
 	
 	public function __construct($config = array()){
 		
@@ -37,8 +47,10 @@ class Model
 			$this->prefix = $this->config["prefix"];
 		}
 		
-		if($this->table != null){
-			$this->table($this->table);
+		$this->buildQuery = new BuildQuery($this->prefix);
+		
+		if($this->table){
+			$this->buildQuery->table($this->table);
 		}
 	}
 	
@@ -55,191 +67,196 @@ class Model
 		return $this->connector;
 	}
 	
-    /**
-     * Query table
-     *
-     * @return $this
-     */
-	public function table($table){
-		$this->options = array();
-		$this->condition = null;
-		$this->options["table"] = $this->getTableName($table);
-		return $this;
-	}
-	
-    /**
-     * Query where
-     *
-     * @return $this
-     */
-	public function where(){
-		if($this->condition == null){
-			$this->condition = new Condition();
-		}
-		$args = func_get_args();
-		call_user_func_array(array($this->condition,'where'),$args);
+	final public function __call($method,$args){
 		
-		$this->options["where"] = $this->condition->getCondition();
-		
-		return $this;
-	}
-	
-    /**
-     * Query join
-     *
-     * @return $this
-     */
-	public function join($table, $condition, $handle = 'LEFT'){
-		$this->options["join"][] = sprintf("%s JOIN %s ON %s",$handle,$this->getTableName($table),$condition);
-		return $this;
-	}
-	
-    /**
-     * Query field
-     *
-     * @return $this
-     */
-	public function field($field = '*'){
-		$this->options["field"] = $field;
-		return $this;
-	}
-	
-    /**
-     * Query count
-     *
-     * @return $this
-     */
-	public function count($field = '*'){
-		$this->options["field"] = sprintf("count(%s)",$field);
-		return $this;
-	}
-	
-    /**
-     * Query avg
-     *
-     * @return $this
-     */
-	public function avg($field){
-		$this->options["field"] = sprintf("avg(%s)",$field);
-		return $this;
-	}
-	
-    /**
-     * Query sum
-     *
-     * @return $this
-     */
-	public function sum($field){
-		$this->options["field"] = sprintf("sum(%s)",$field);
-		return $this;
-	}
-	
-    /**
-     * Query min
-     *
-     * @return $this
-     */
-	public function min($field){
-		$this->options["field"] = sprintf("min(%s)",$field);
-		return $this;
-	}
-	
-    /**
-     * Query max
-     *
-     * @return $this
-     */
-	public function max($field){
-		$this->options["field"] = sprintf("max(%s)",$field);
-		return $this;
-	}
-	
-    /**
-     * Query limit
-     *
-     * @return $this
-     */
-	public function limit($offset = 0, $pageSize = 30){
-		$this->options["limit"] = sprintf("limit %d,%d",$offset,$pageSize);
-		return $this;
-	}
-	
-    /**
-     * Query list count
-     *
-     * @return int
-     */
-	final public function rows(){
-		$sql = $this->getSql();
-		if(strstr($sql,"group by")){
-			$sql = sprintf("select count(*) as count from(%s) as s",$sql);
+		if(in_array($method, array('where', 'orwhere','whereIn','whereNotIn','between','whereLike','whereNotLike','table', 'join', 'joinquery','order', 'group', 'limit', 'having', 'count','sum','min','max','avg','field', 'lock','union'), true)){
+			
+			if($method == 'table'){
+				$this->buildQuery = new BuildQuery($this->prefix);
+			}
+			
+			call_user_func_array(array($this->buildQuery,$method),$args);
+			
 		}else{
-			$sql = preg_replace("/select\s+(.*?)\s+from/","select count(*) as count from",$sql);
+			throw new Exception("{$method} is not exists !");
 		}
-		$res = $this->connect()->query($sql)->find();
+		return $this;
+	}
+	
+    /**
+     * Query find
+     *
+     * @return $this
+     */
+	final public function find(){
 		
-		if($res){
-			return $res['count'];
+		$this->sql = $this->buildQuery->getSql();
+		
+		$row = $this->query($this->sql)->find();
+		
+		if($this->relations){
+			foreach($this->relations as $name=>$relation){
+				if($relation instanceof HasOne){
+					$field = $relation->getForeignKey();
+					$row[$name] = $relation->getModel()->where($field,$row[$field])->find();
+				}
+				
+				if($relation instanceof BelongsTo){
+					$primaryKey = $relation->getLocalKey();
+					$field = $relation->getForeignKey();
+					$row[$name] = $relation->getModel()->where($primaryKey,$row[$field])->find();
+				}
+				
+				if($relation instanceof HasMany){
+					$field = $relation->getForeignKey();
+					$row[$name] = $relation->getModel()->where($field,$row[$field])->select();
+				}
+				
+				if($relation instanceof BelongsToMany){
+					$field = $relation->getForeignKey();
+					$row[$name] = $relation->belongsToManyQuery()->where($field,$row[$field])->select();
+				}
+			}
+		}
+		
+		return $row;
+	}
+	
+    /**
+     * Query find
+     *
+     * @return $this
+     */
+	final public function first($id){
+		$this->buildQuery->where($this->primaryKey,$id);
+		$this->sql = $this->buildQuery->getSql();
+		return $this->query($this->sql)->find();
+	}
+
+    /**
+     * Query select
+     *
+     * @return $this
+     */
+	final public function select(){
+		$this->sql = $this->buildQuery->getSql();
+		$list = $this->query($this->sql)->select();
+		if($this->pages){
+			if(request('page',1) > $this->pages['total']){
+				return false;
+			}
+		}
+		
+		if($this->relations){
+			
+			foreach($list as &$val){
+				foreach($this->relations as $name=>$relation){
+					
+					if($relation instanceof HasOne){
+						$field = $relation->getForeignKey();				
+						$val[$name] = $relation->getModel()->where($field,$val[$field])->find();
+					}
+					
+					if($relation instanceof BelongsTo){
+						$primaryKey = $relation->getLocalKey();
+						$field = $relation->getForeignKey();
+						$val[$name] = $relation->getModel()->where($primaryKey,$val[$field])->find();
+					}
+				}
+			}
+			
+		}
+		
+		if($this->callback != null && is_callable($this->callback)){
+			if($list){
+				foreach($list as $k=>&$row){
+					$row = call_user_func($this->callback,$row);
+				}
+			}
+		}
+		
+		return $list;
+	}
+	
+	final public function query($sql){
+		return $this->connect()->query($sql);
+	}
+	
+	//设置分页
+	final public function offset($pagesize = 30,$options = array()){
+		
+		$params = array();
+		
+		if(request('page')){
+			$page = request('page');
+			$params['page'] = intval($page);
+		}
+		
+		if(request('offset')){
+			$offset = request('offset');
+			$params['offset'] = intval($offset);
+		}
+		
+		if($options){
+			$params = array_merge($params,$options);
+		}
+		
+		
+		$rows = $this->rows();
+		$total = max(ceil($rows / $pagesize), 1); //总页数
+		
+		if(isset($params['offset'])){
+			$offset = $params['offset'];
 		}else{
-			return 0;
+			$page = $params['page'];
+			$curr_page = max(min($total, $page), 1); //当前页
+			$offset = ($curr_page - 1) * $pagesize;
 		}
-	}
-	
-    /**
-     * Query list pages
-     *
-     * @return $this
-     */
-	public function offset($pageSize = 30,$name = 'offset'){
-		$rows = $this->rows();
-		$total = max(ceil($rows / $pageSize), 1); //总页数
-		$params = array();
-		$offset = isset($_GET[$name]) ? intval($_GET[$name]) : 0;
-		$this->options['limit'] = sprintf("%d,%d",$offset,$pageSize);
+		
+		$this->buildQuery->limit($pagesize,$offset);
 		$this->pages = array('count'=>$rows,'total'=>$total);
-		if($offset > $rows){
-			return false;
-		}
 		return $this;
 	}
 	
-    /**
-     * Query list pages
-     *
-     * @return $this
-     */
-	public function pagination($pageSize = 30,$name = 'page'){
+	final public function paginate($pageSize = 30){
+		
 		$rows = $this->rows();
-		$total = max(ceil($rows / $pageSize), 1); //总页数
-		$params = array();
-		$page = isset($_GET[$name]) ? intval($_GET[$name]) : 1;
-		$offset = ($page - 1) * $pageSize;
-		$this->options['limit'] = sprintf("limit %d,%d",$offset,$pageSize);
-		$this->pages = array('count'=>$rows,'total'=>$total);
-		if($page > $total || $page < 1){
-			return false;
+		$pagination = new pagination($rows,$pageSize);
+		
+		if($pagination->hasPage()){
+		
+			$this->buildQuery->limit($pageSize,$pagination->offset());
+			$list = $this->select();
+			
+		}else{
+			$list = array();
 		}
-		return $this;
+		
+		if($this->callback != null && is_callable($this->callback)){
+			if($list){
+				foreach($list as $k=>&$row){
+					$row = call_user_func($this->callback,$row);
+				}
+			}
+		}
+		
+		$data = new stdClass();
+		$data->paginate = $pagination;
+		$data->data = $list;
+		return $data;
 	}
 	
-    /**
-     * Query order
-     *
-     * @return $this
-     */
-	public function order($order){
-		$this->options["order"] = sprintf("order by %s",$order);
-		return $this;
-	}
-	
-    /**
-     * Query group by
-     *
-     * @return $this
-     */
-	public function group($group){
-		$this->options["group"] = sprintf("group by %s",$group);
-		return $this;
+	//分批获取数据
+	final public function chunk($pagesize,callable $callback){
+		$page = 1;
+		do{
+			$_GET["page"] = $page;
+			$this->offset($pagesize);
+			$list = $this->select();
+			call_user_func($callback,$list,$pagesize,$page);
+			$page++;
+			
+		}while($page <= $this->model->pages["total"]);
 	}
 	
     /**
@@ -247,9 +264,14 @@ class Model
      *
      * @return $this
      */
-	final public function select(){
-		$this->sql = $this->getSql();
-		return $this->connect()->query($this->sql)->select();
+	final public function queryList($sql){
+		$this->sql = $sql;
+		return $this->query($this->sql)->select();
+	}
+	
+	final public function pipeline(callable $callback){
+		$this->callback = $callback;
+		return $this;
 	}
 	
     /**
@@ -296,30 +318,26 @@ class Model
 	}
 	
     /**
-     * Query find
-     *
-     * @return $this
-     */
-	final public function find($value = null){
-		if($this->primaryKey != null && $value != null){
-			$this->where($this->primaryKey,intval($value));
-		}
-		$this->sql = $this->getSql();
-		return $this->connect()->query($this->sql)->find();
-	}
-	
-    /**
      * Query find get field value
      *
      * @return $this
      */
 	final public function getVal($field){
-		$row = $this->find();
+		
+		$fields = $this->buildQuery->getFields();
+		if($fields[0] != $field){
+			$this->buildQuery->field(sprintf("%s as %s",$fields[0],$field),0);
+		}
+		
+		$this->sql = $this->buildQuery->getSql();
+
+		$row = $this->query($this->sql)->find();
+		
 		if(isset($row[$field])){
 			return $row[$field];
-		}else{
-			return false;
 		}
+		
+		return false;
 	}
 	
     /**
@@ -330,27 +348,21 @@ class Model
      * @return int
      */
 	final public function insert($data = array(),$rows = false){
-		$fields = array();
-		$values = array();
-		$table = $this->options["table"];
-		if($rows == true){
-			$values = array();
+		if($rows === true){
 			foreach($data as $k=>$row){
-				if(count($fields) == 0){
-					foreach($row as $field=>$val){
-						$fields[] = sprintf("`%s`",$field);
-					}
+				if($this->timestamps){
+					$row[self::CREATED_AT] = date('Y-m-d H:i:s');
 				}
-				$values[] = sprintf("(%s)",implode(",",$this->getData($row)));
+				$data[$k] = $this->getData($row);
 			}
 		}else{
-			foreach($data as $field=>$val){
-				$fields[] = sprintf("`%s`",$field);
+			if($this->timestamps){
+				$data[self::CREATED_AT] = date('Y-m-d H:i:s');
 			}
-			$values[] = sprintf("(%s)",implode(",",$this->getData($data)));
+			$data = $this->getData($data);
 		}
-		$this->sql = sprintf("INSERT INTO %s (%s) values %s;",$table,implode(",",$fields),implode(",",$values));
-		return $this->connect()->query($this->sql)->insert();
+		$this->sql = $this->buildQuery->insert($data,$rows);
+		return $this->query($this->sql)->insert();
 		
 	}
 	
@@ -361,22 +373,14 @@ class Model
      * @return int
      */
 	final public function update($data = array()){
-		$table = $this->options['table'];
-		$where = isset($this->options['where']) ? $this->options['where'] : '1=1';
-
 		if(is_array($data)){
-			$sqls = array();
-			foreach($data as $field=>$val){
-				if($this->hasField($field)){
-					$val = sprintf("'%s'",$this->connector->escape(trim($val)));
-					$sqls[] = sprintf("`%s`=%s",$field,$val);
-				}
+			if($this->timestamps){
+				$data[self::UPDATED_AT] = date('Y-m-d H:i:s');
 			}
-			$this->sql = sprintf("UPDATE %s SET %s where %s",$table,implode(',',$sqls),$where);
-		}else{
-			$this->sql = sprintf("UPDATE %s SET %s where %s",$table,$data,$where);
+			$data = $this->getData($data);
 		}
-		return $this->connect()->query($this->sql);
+		$this->sql = $this->buildQuery->update($data);
+		return $this->query($this->sql);
 	}
 
 
@@ -388,17 +392,8 @@ class Model
      * @return int
      */
 	final public function replace($field = array(), $data = array()){
-		$table = $this->options['table'];
-		$where = isset($this->options['where']) ? $this->options['where'] : '1=1';
-		$sqls = array();
-		foreach($field as $val){
-			foreach($data as $key=>$word){
-				$sqls[] = sprintf("%s=replace(%s,'%s','%s')",$val,$val,$key,$word);
-			}
-		}
-		$this->sql = sprintf("UPDATE %s SET %s where %s",$table,implode(',',$sqls),$where);
-
-		return $this->connect()->execute($this->sql);
+		$this->sql = $this->buildQuery->sql_replace($field,$data);
+		return $this->query($this->sql);
 	}
 
     /**
@@ -409,27 +404,15 @@ class Model
      * @return int
      */
 	final public function replaceInto($data = array(),$rows = false){
-		$fields = array();
-		$values = array();
-		$table = $this->options["table"];
-		if($rows == true){
-			$values = array();
+		if($rows === true){
 			foreach($data as $k=>$row){
-				if(count($fields) == 0){
-					foreach($row as $field=>$val){
-						$fields[] = sprintf("`%s`",$field);
-					}
-				}
-				$values[] = sprintf("(%s)",implode(",",$this->getData($row)));
+				$data[$k] = $this->getData($row);
 			}
 		}else{
-			foreach($data as $field=>$val){
-				$fields[] = sprintf("`%s`",$field);
-			}
-			$values[] = sprintf("(%s)",implode(",",$this->getData($data)));
+			$data = $this->getData($data);
 		}
-		$this->sql = sprintf("REPLACE INTO %s (%s) values %s;",$table,implode(",",$fields),implode(",",$values));
-		return $this->connect()->execute($this->sql);
+		$this->sql = $this->buildQuery->replace($data,$rows);
+		return $this->query($this->sql);
 	}
 	
     /**
@@ -438,25 +421,8 @@ class Model
      * @return bool
      */
 	final public function delete(){
-		$table = $this->options['table'];
-		$where = isset($this->options['where']) ? $this->options['where'] : '1=1';
-		if(isset($this->options["join"])){
-			$joins = $this->options["join"];
-			$alias = array();
-			$arr = explode(" ",$table);
-			$alias[] = $arr[2];
-			foreach($joins as $join){
-				$arr = explode(" ",$join);
-				$alias[] = $arr[4];
-			}		  
-			$joinSql = implode(" ",$this->options["join"]);
-			$alias = implode(",",$alias);
-			$this->sql = sprintf("DELETE %s from %s %s where %s",$alias,$table,$joinSql,$where);
-		}else{
-			$this->sql = sprintf("DELETE from %s where %s",$table,$where);
-		}
-
-		return $this->connect()->execute($this->sql);
+		$this->sql = $this->buildQuery->delete();
+		return $this->query($this->sql);
 	}
 
     /**
@@ -494,6 +460,29 @@ class Model
 	final public function transEnd(){
 		$this->connect()->transEnd();
 	}
+	
+	//事务封装
+	public function transaction(callable $callback, callable $exception = null){
+		$this->startTrans();
+		try{
+			
+			call_user_func($callback,$this->model);
+			
+			$this->commit();
+			
+		}catch(Exception $ex){
+			
+			$this->rollback();
+			
+			if($exception != null){
+				call_user_func($exception,$ex);
+			}else{
+				throw new Exception($ex->getMessage(),$ex->getCode());
+			}
+		}
+		
+		$this->transEnd();
+	}
 
     /**
      * Lock table
@@ -501,8 +490,7 @@ class Model
      * @return $this
      */
 	final public function lock(){
-		$table = $this->options['table'];
-		$this->connect()->query(sprintf("LOCK TABLES `%s` WRITE",$table));
+		$this->connect()->query(sprintf("LOCK TABLES `%s` WRITE",$this->table));
 	}
 
     /**
@@ -512,6 +500,38 @@ class Model
      */
 	final public function unlock(){
 		$this->connect()->query("UNLOCK TABLES");
+	}
+	
+	//懒加载
+	public function with($name,callable $callback = null){
+		$model = call_user_func_array(array($this,$name),array());
+		
+		if($callback != null){
+			call_user_func($callback,$model->getModel());
+		}
+		
+		$this->relations[$name] = $model;
+		return $this;
+	}
+	
+	//一对一关联
+	public function hasOne($model,$foreignKey, $localKey = 'id'){
+		return new HasOne($this, $model, $foreignKey, $localKey);
+	}
+	
+	//一对一关联
+	public function belongsTo($model,$foreignKey, $localKey = 'id'){
+		return new BelongsTo($this, $model, $foreignKey, $localKey);
+	}
+	
+	//一对多关联
+	public function hasMany($model,$foreignKey, $localKey = 'id'){
+		return new HasMany($this, $model, $foreignKey, $localKey);
+	}
+	
+	//多对多关联
+	public function belongsToMany($model,$middle,$foreignKey, $localKey = 'id'){
+		return new BelongsToMany($this, $model, $middle, $foreignKey, $localKey);
 	}
 	
 	
@@ -547,34 +567,8 @@ class Model
      * @return string
      */
 	public function getSql(){
-		
-		if(!isset($this->options["field"])){
-			$this->options["field"] = "*";
-		}
-		
-		$sql[] = sprintf("select %s from %s",$this->options["field"],$this->options["table"]);
-		
-		if(isset($this->options["join"]) && count($this->options["join"]) > 0){
-			$sql[] = implode(" ",$this->options["join"]);
-		}
-		
-		if(isset($this->options["where"]) && $this->options["where"] != ''){
-			$sql[] = sprintf("where %s",$this->options["where"]);
-		}
-		
-		if(isset($this->options["group"]) && $this->options["group"] != ''){
-			$sql[] = $this->options["group"];
-		}
-		
-		if(isset($this->options["order"]) && $this->options["order"] != ''){
-			$sql[] = $this->options["order"];
-		}
-		
-		if(isset($this->options["limit"]) && $this->options["limit"] != ''){
-			$sql[] = $this->options["limit"];
-		}
-		
-		return implode(" ",$sql);
+		$this->sql = $this->buildQuery->getSql();
+		return $this->sql;
 	}
 	
     /**
@@ -586,6 +580,18 @@ class Model
 		return $this->sql;
 	}
 	
+	//构造子查询
+	final public function getSubQuery(callable $callback){
+		$sql = $this->buildQuery->getSql();
+		$table = sprintf("(%s)tmp",$sql);
+
+		$this->buildQuery = new BuildQuery($this->prefix);
+		$this->buildQuery->setTable($table);
+
+		call_user_func($callback,$this->buildQuery);
+		return $this;
+	}
+	
     /**
      * Get Fields
      *
@@ -593,15 +599,23 @@ class Model
      * @return array
      */
 	public function getFields(){
-		$fields = array();
-		$table = $this->options["table"];
-		$list = $this->connect()->query("desc $table")->select();
-		if($list){
-			foreach($list as $k=>$val){
-				$fields[] = $val["Field"];
-			}
+		static $fieldsList = array();
+		
+		$table = $this->buildQuery->getTable();
+		
+		$sql = "describe {$table}";
+		
+		if($fieldsList[md5($sql)]){
+			return $fieldsList[md5($sql)];
 		}
-		unset($list);
+		
+		$result = $this->query($sql);
+		$fields = array();
+		while($rs = $this->db->fetch_array($result)){
+			$fields[] = $rs["Field"];
+		}
+		$fieldsList[md5($sql)] = $fields;
+		
 		return $fields;
 	}
 	
@@ -644,7 +658,7 @@ class Model
      * @return bool
      */
 	final public function hasTable($table){
-		$table = $this->getTableName($table);
+		$table = $this->tableName($table);
 		if(in_array($table,$this->getTables())){
 			return true;
 		}else{
@@ -652,19 +666,27 @@ class Model
 		}
 	}
 	
-    /**
-     * Getting table name
-     *
-     * @return strig
-     */
-	public function getTableName($table){
-		if(strstr($table,' as ')){
-			$tables = explode(" as ",$table);
-			$tables[0] = sprintf("%s%s",$this->prefix,$tables[0]);
-			return implode(" as ",$tables);
-		}else{
-			return sprintf("%s%s",$this->prefix,$table);
+	//获取当前定义的表名
+	public function tableName($alias = ''){
+		if($alias != ''){
+			return sprintf("%s as %s",$this->table,$alias);
 		}
+		
+		return $this->table;
+	}
+	
+	//获取当前定义的表名
+	public function fullTableName($alias = ''){
+		if($alias != ''){
+			return sprintf("%s as %s",$this->prefix . $this->table,$alias);
+		}
+		
+		return $this->prefix . $this->table;
+	}
+	
+	//获取主键
+	public function primaryKey(){
+		return $this->primaryKey;
 	}
 }
 ?>

@@ -11,11 +11,23 @@ class Debug extends Exception{
 	private $splitStr = '--';
 	protected $message;
 	const DEBUG_FILE_SIZE = 1024*1024*10;
+	private $levels = array('debug','info','notice','warning','error','dangerous','alert','emergency');
 	
-	public function __construct($message,$print = false){
+	public function __construct($message,$type = 'debug',$print = false){
+		
+		if(!in_array($type,$this->levels)){
+			$type = 'debug';
+		}
+		
+		if(config('LOG_LEVEL') != null){
+			$level = array_search(config('LOG_LEVEL'),$this->levels);
+			if(array_search($type,$this->levels) < $level){
+				return false;
+			}
+		}
 		
 		$this->message = $message;
-		$this->debugPath   = storage_path($this->debugPath . date($this->format) . '/');
+		$this->debugPath   = storage_path($this->debugPath . $type .'/'. date($this->format) . '/');
 		if($print == false){
 			$this->output();
 		}else{
