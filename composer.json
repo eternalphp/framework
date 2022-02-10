@@ -40,7 +40,8 @@
 			"framework\\Logger\\": "src/framework/Logger/",
 			"framework\\Language\\": "src/framework/Language/",
 			"framework\\Validate\\": "src/framework/Validate/",
-			"framework\\Event\\": "src/framework/Event/"
+			"framework\\Event\\": "src/framework/Event/",
+			"framework\\Middleware\\": "src/framework/Middleware/"
 		},
 		"files":[
 			"src/framework/Foundation/functions.php"

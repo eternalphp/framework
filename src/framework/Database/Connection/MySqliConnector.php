@@ -4,6 +4,7 @@ namespace framework\Database\Connection;
 
 use framework\Database\Connection\ConnectorInterface;
 use framework\Exception\DatabaseException;
+use Exception;
 
 class MySqliConnector implements ConnectorInterface
 {
@@ -56,7 +57,7 @@ class MySqliConnector implements ConnectorInterface
 	public function query($sql){
 		$this->result = mysqli_query($this->connection,$sql);
 		if(!$this->result){
-			$this->error("$sql");
+			throw new DatabaseException($sql);
 		}
 	}
 	
@@ -67,7 +68,11 @@ class MySqliConnector implements ConnectorInterface
      * @return $this
      */
 	public function execute($sql){
-		return mysqli_query($this->connection,$sql);
+		try{
+			return mysqli_query($this->connection,$sql);
+		}catch(Exception $ex){
+			throw new DatabaseException($ex->getMessage(),$ex->getCode());
+		}
 	}
 
     /**
@@ -90,8 +95,12 @@ class MySqliConnector implements ConnectorInterface
      * @return $this
      */
 	public function find(){
-		$row = mysqli_fetch_assoc($this->result);
-		return $row;
+		try{
+			$row = mysqli_fetch_assoc($this->result);
+			return $row;
+		}catch(DatabaseException $ex){
+			echo $ex->getMessage();
+		}
 	}
 	
     /**
