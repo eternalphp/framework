@@ -12,6 +12,7 @@ use framework\Logger\Logger;
 use framework\Language\Language;
 use framework\Http\Request;
 use framework\Pipeline\Pipeline;
+use Exception;
 
 class Application
 {
