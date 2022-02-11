@@ -2,16 +2,19 @@
 
 namespace framework\Controller;
 use framework\Container\Container;
+use stdClass;
 
 class Controller
 {
 	
 	protected $app;
 	protected $view;
+	protected $viewData;
 	
 	public function __construct(){
 		$this->app = Container::getInstance();
 		$this->view = $this->app['view'];
+		$this->viewData = new stdClass();
 	}
 	
 	public function view(){
@@ -36,6 +39,8 @@ class Controller
 		if($path != '' && strstr($path,'/') == false){
 			$path = implode('/',array($namespace,ucfirst($directory),$path));
 		}
+		
+		$data['viewData'] = $this->viewData;
 		
 		$this->view->assign($data);
 		$this->view->display($path);
