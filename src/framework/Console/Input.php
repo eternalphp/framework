@@ -14,6 +14,7 @@ class Input
 	private $argvs;
 	private $command;
 	private $commandName;
+	private $consoleName;
 	private $options = [];
 	private $shortOptions = [];
 	private $arguments = [];
@@ -23,7 +24,7 @@ class Input
         if (null === $argv) {
             $argv = $_SERVER['argv'];
             // 去除命令名
-            array_shift($argv);
+            $this->consoleName = array_shift($argv);
 			
 			$name = '';
 			if(strpos($argv[0], '-') === false){
@@ -136,6 +137,22 @@ class Input
      */
 	public function getCommandName(){
 		return $this->commandName;
+	}
+	
+    /**
+     * 获取控制台命令名称
+	 * @return string
+     */
+	public function getConsoleName(){
+		return $this->consoleName;
+	}
+	
+    /**
+     * 获取完整命令名称
+	 * @return string
+     */
+	public function getFullName(){
+		return implode(" ",[$this->consoleName,$this->commandName]);
 	}
 	
     /**

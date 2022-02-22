@@ -16,7 +16,7 @@ class Lists extends Command
     public function configure()
     {
         // 指令配置
-        $this->setName('lists')
+        $this->setName('list')
             ->setDescription('Lists commands')->setHelp(
             <<<EOF
 The <info>%command.name%</info> command lists all commands:
@@ -60,7 +60,7 @@ EOF
 		$lines = array_merge($lines,$commands);
 		
 		foreach($lines as $line){
-			$output->success($line);
+			$output->write($line);
 		}
     }
 }

@@ -3,6 +3,7 @@
 namespace framework\Console\input;
 
 use framework\Console\Console;
+use framework\Console\output\Formatter;
 use framework\Exception\InvalidArgumentException;
 
 class Command
@@ -516,6 +517,18 @@ class Command
 				$name = str_pad(sprintf("-%s, --%s",$option->getShortcut(),$name),$strWidth," ");
 				$elements[] = sprintf("  %s%s",$name,$option->getDescription());
 			}
+			$elements[] = "\n";
+		}
+		
+		$help = $this->getHelp();
+		if($help != ''){
+			
+			$help = str_replace('%command.full_name%',implode(' ',[$this->getConsole()->getName(),$this->getName()]),$help);
+			$help = str_replace('%command.name%',$this->getName(),$help);
+			
+			$help = Formatter::getInstance()->format($help);
+			$elements[] = "Help:";
+			$elements[] = sprintf("  %s",$help);
 			$elements[] = "\n";
 		}
 

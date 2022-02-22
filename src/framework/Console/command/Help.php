@@ -27,14 +27,14 @@ class Help extends Command
 
     public function execute(Input $input, Output $output)
     {
-		$command = $input->getArgument('command_name');
-		$command = $this->getConsole()->getCommand($command);
+		$commandName = $input->getArgument('command_name');
+		$command = $this->getConsole()->getCommand($commandName);
 		
 		$lines = $command->describe();
 
 		if($lines){
 			foreach($lines as $line){
-				$output->error($line);
+				$output->write($line);
 			}
 		}
 

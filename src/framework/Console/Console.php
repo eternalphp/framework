@@ -13,6 +13,7 @@ class Console
 	
 	static $instance = null;
 	private $processTitle = 'test';
+	private $name = 'console';
 	private $style;
 	private $output;
 	private $input;
@@ -147,6 +148,14 @@ class Console
 		}else{
 			throw new InvalidArgumentException("can not find command: $name");
 		}
+	}
+	
+    /**
+     * 获取命令行名称
+     * return string
+     */
+	public function getName(){
+		return $this->name;
 	}
 	
     /**
