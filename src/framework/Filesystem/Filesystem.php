@@ -265,13 +265,15 @@ class Filesystem
      */
     public function delete($path)
     {
-		if($this->isFile($path)){
-			return unlink($path);
-		}else{
-			$this->getFiles($path,function($filename){
-				unlink($filename);
-			});
-			return rmdir($path);
+		if(file_exists($path)){
+			if($this->isFile($path)){
+				return unlink($path);
+			}else{
+				$this->getFiles($path,function($filename){
+					$this->delete($filename);
+				});
+				rmdir($path);
+			}
 		}
     }
 	
@@ -285,14 +287,17 @@ class Filesystem
     public function getFiles($path,$callback)
     {
 		$path = rtrim($path,'/').'/';
-		$handle = dir($path);
-		while(($file = $handle->read()) !== false){
-			if($file != '.' && $file != '..'){
-				$filename = $path . $file;
-				if($this->isFile($filename)){
-					call_user_func($callback,$filename);
-				}else{
-					$this->getFiles($filename,$callback);
+		if(file_exists($path)){
+			$handle = dir($path);
+			while(($file = $handle->read()) !== false){
+				if($file != '.' && $file != '..'){
+					$filename = $path . $file;
+					if($this->isFile($filename)){
+						call_user_func($callback,$filename,'file');
+					}else{
+						$this->getFiles($filename,$callback);
+						call_user_func($callback,$filename,'dir');
+					}
 				}
 			}
 		}

@@ -41,7 +41,8 @@
 			"framework\\Language\\": "src/framework/Language/",
 			"framework\\Validate\\": "src/framework/Validate/",
 			"framework\\Event\\": "src/framework/Event/",
-			"framework\\Middleware\\": "src/framework/Middleware/"
+			"framework\\Middleware\\": "src/framework/Middleware/",
+			"framework\\Console\\": "src/framework/Console/"
 		},
 		"files":[
 			"src/framework/Foundation/functions.php"

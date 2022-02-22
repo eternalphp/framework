@@ -47,15 +47,25 @@ abstract class Engine
 	 * @return void;
 	 */
 	protected function load($tFile){
-		$this->getTemplateFile($tFile);
-		$this->getCacheFile($tFile);
-		if(!file_exists($this->cFile) || $this->expire() == true || $this->realtime){
-			$this->parse();
+		try{
+			$this->getTemplateFile($tFile);
+			$this->getCacheFile($tFile);
+			if(!file_exists($this->cFile) || $this->expire() == true || $this->realtime){
+				$this->parse();
+			}
+			if($this->tVal){
+				extract($this->tVal, EXTR_OVERWRITE);
+			}
+			ob_start();
+			include($this->cFile);
+			$content = ob_get_contents();
+			ob_end_clean();
+			
+		}catch(Exception $ex){
+			throw new Exception($ex->getMessage());
 		}
-		if($this->tVal){
-			extract($this->tVal, EXTR_OVERWRITE);
-		}
-		include($this->cFile);
+		
+		exit($content);
 	}
 	
 	/**
@@ -170,7 +180,8 @@ abstract class Engine
 		
 		//继承模板时，先解析标签
 		
-		preg_match_all("/@section\([\'\"]+(.*?)[\'\"]+,+[\'\"]+(.*?)[\'\"]+\)/i",$this->tContent,$matchs);
+		preg_match_all("/@section\([\'\"]+(.*?)[\'\"]+\s?,\s?+[\'\"]+(.*?)[\'\"]+\)/i",$this->tContent,$matchs);
+		
 		if($matchs[0]){
 
 			foreach($matchs[1] as $k=>$val){

@@ -2,20 +2,20 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>@yield("title")</title>
+        <title>Not Found</title>
 
         <!-- Fonts -->
-        <link href="https://fonts.googleapis.com/css?family=Raleway:100,600" rel="stylesheet" type="text/css">
+        <link rel="dns-prefetch" href="//fonts.gstatic.com">
+        <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet" type="text/css">
 
         <!-- Styles -->
         <style>
             html, body {
                 background-color: #fff;
                 color: #636b6f;
-                font-family: 'Raleway', sans-serif;
+                font-family: 'Nunito', sans-serif;
                 font-weight: 100;
                 height: 100vh;
                 margin: 0;
@@ -35,23 +35,28 @@
                 position: relative;
             }
 
-            .content {
+            .code {
+                border-right: 2px solid;
+                font-size: 26px;
+                padding: 0 15px 0 15px;
                 text-align: center;
             }
 
-            .title {
-                font-size: 36px;
-                padding: 20px;
+            .message {
+                font-size: 18px;
+                text-align: center;
             }
         </style>
     </head>
     <body>
         <div class="flex-center position-ref full-height">
-            <div class="content">
-                <div class="title">
-                    {{ $message }}
-                </div>
-            </div>
+            <div class="code">
+                404
+			</div>
+
+            <div class="message" style="padding: 10px;">
+                Not Found
+			</div>
         </div>
     </body>
 </html>

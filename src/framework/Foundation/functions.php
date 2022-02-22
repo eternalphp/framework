@@ -56,6 +56,16 @@ function config($key = null,$default = null){
 	return config()->get($key, $default);
 }
 
+function abort($code = 404){
+	$view = app('view');
+	$view->templatePath(dirname(__DIR__) . '/Exception/');
+	$view->cachePath(dirname(__DIR__) . '/Exception/' . "/cache/");
+	$view->realtime();
+	$view->assign("title","404");
+	$view->assign("message","Not Found");
+	$view->display("views/404");
+}
+
 function session(){
 	$args = func_get_args();
 	$num = func_num_args();

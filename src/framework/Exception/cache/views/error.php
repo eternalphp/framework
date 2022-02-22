@@ -13,7 +13,7 @@
     <div style="border:1px dotted #F90; border-left:6px solid #F60; padding:15px; background:#FFC"> 出错文件：<?=$row["file"]?> </div>
     <div style="border:1px dotted #F90; border-left:6px solid #F60; padding:15px; background:#FFC"> 错误行：<?=$row["line"]?> </div>
     <div style="border:1px dotted #F90; border-left:6px solid #F60; padding:15px; background:#FFC"> 错误级别：<?=$row["level"]?> </div>
-    <div style="border:1px dotted #F90; border-left:6px solid #F60; padding:15px; background:#FFC;line-height:20px;"> Trace信息：<br> <?=print_r($row["trace"])?>
+    <div style="border:1px dotted #F90; border-left:6px solid #F60; padding:15px; background:#FFC;line-height:20px;"> Trace信息：<br> <?=print_r($row["trace"],true)?>
     </div>
     <div style="height:20px;"></div>
     <div style=" font-size:15px;">您可以选择 &nbsp;&nbsp;<a href="" title="重试">重试</a> &nbsp;&nbsp;<a href="javascript:history.back()" title="返回">返回</a> </div>

@@ -26,8 +26,8 @@ class Application
 	private $services = [];
 	static $instance = null;
 	
-	public function __construct(){
-		$this->basePath = ROOT;
+	public function __construct($basePath = ''){
+		$this->basePath = $basePath;
 		$this->container = Container::getInstance();
 	}
 	
@@ -113,6 +113,16 @@ class Application
      */
 	public function config($key,$default = null){
 		return $this->container['config']->get($key,$default);
+	}
+	
+    /**
+     * set root path
+     *
+     * @return string
+     */
+	public function setBasePath($path){
+		$this->basePath = $path;
+		return $this;
 	}
 	
     /**
@@ -293,7 +303,8 @@ class Application
 				
 			}else{
 				if(php_sapi_name() != 'cli'){
-					header('HTTP/1.1 404 Not Found');
+					//header('HTTP/1.1 404 Not Found');
+					abort();
 				}else{
 					exit("No find command");
 				}
@@ -320,7 +331,7 @@ class Application
 					
 					$class = implode("\\",['App','Middleware',$name.'Middleware']);
 					if(!class_exists($class)){
-						$class = implode("\\",['System','Middleware',$name.'Middleware']);
+						$class = implode("\\",['framwork','Middleware',$name.'Middleware']);
 					}
 					
 					$middleware = new $class;
@@ -399,5 +410,14 @@ class Application
         return array_values(array_filter($this->services, function ($value) use ($name) {
             return $value instanceof $name;
         }, ARRAY_FILTER_USE_BOTH))[0] ?? null;
+	}
+	
+    /**
+     * get version of application
+     *
+     * @return string
+     */
+	public function version(){
+		return self::VERSION;
 	}
 }
