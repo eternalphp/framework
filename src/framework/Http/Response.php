@@ -117,14 +117,9 @@ final class Response{
 		return $this;
 	}
 	
-    public function setContent($content)
+    public function setContent(string $content)
     {
-        if (null !== $content && !is_string($content) && !is_numeric($content) && !is_callable([$content, '__toString'])) {
-            throw new UnexpectedValueException(sprintf('The Response content must be a string or object implementing __toString(), "%s" given.', gettype($content)));
-        }
-
-        $this->content = (string) $content;
-
+        $this->content = $content;
         return $this;
     }
 	
@@ -285,7 +280,7 @@ final class Response{
      */
     public function json(array $data)
     {
-        $this->setContentType("text/json");
+        $this->setContentType("application/json");
 		$this->setContent(json_encode($data));
         $this->send();
     }
@@ -295,7 +290,7 @@ final class Response{
      */
     public function jsonp(array $data, $callback = 'callback')
     {
-        $this->setContentType("text/jsonp");
+        $this->setContentType("application/jsonp");
         $body = sprintf('%s(%s)', $callback, json_encode($data));
 		$this->setContent($body);
         $this->send();

@@ -34,6 +34,7 @@ class Application
 	public static function getInstance(){
 		if(self::$instance == null){
 			self::$instance = new self();
+			defined("ROOT") || self::$instance->setBasePath(ROOT);
 		}
 		return self::$instance;
 	}
@@ -256,14 +257,18 @@ class Application
 		try{
 			
 			if(php_sapi_name() == 'cli'){
+				
 				$argv = $_SERVER["argv"];
 				array_shift($argv);
 				$route = Router::query($argv[0],'COMMAND');
+				
 			}else{
+				
 				$route = Router::query($_SERVER["REQUEST_URI"],$_SERVER["REQUEST_METHOD"]);
 			}
 			
 			if($route){
+				
 				if($route->isCallback()){
 					return $route->callback();
 				}else{
@@ -272,12 +277,12 @@ class Application
 					$this->container->instance('route',$route);
 				}
 				
+				$this->middleware(new Request());
+				
 				$class = $route->getNamespacePath();
 				$this->container->bind('controller',$class);
 				$app = $this->container->get('controller');
 				if(method_exists($app,$method)){
-					
-					$this->middleware(new Request());
 					
 					//解析方法中的参数
 					$methodParams = $this->container->getMethodParams($route->getNamespacePath(),$method);
@@ -310,9 +315,9 @@ class Application
 				}
 			}
 			
-		}catch(Exception $ex){
-			//$e->showError();
-			throw new Exception($ex->getMessage());
+		}catch(BaseException $ex){
+			$e->showError();
+			//throw new Exception($ex->getMessage());
 		}
 	}
 	
@@ -320,6 +325,7 @@ class Application
 	public function middleware(Request $request){
 		$route = $this->container->get('route');
 		$Middlewares = $route->getMiddlewares();
+		
 		if($Middlewares){
 			
 			try{

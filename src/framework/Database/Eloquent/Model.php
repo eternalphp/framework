@@ -52,6 +52,8 @@ class Model
 		if($this->table){
 			$this->buildQuery->table($this->table);
 		}
+		
+		$this->model = $this;
 	}
 	
     /**
@@ -180,6 +182,19 @@ class Model
 	
 	final public function query($sql){
 		return $this->connect()->query($sql);
+	}
+	
+	//返回数据行数
+	final public function rows(){
+		$sql = $this->buildQuery->getSql();
+		$sql = sprintf("select count(*) as count from(%s) as s",$sql);
+		$res = $this->query($sql)->find();
+		
+		if($res){
+			return $res['count'];
+		}else{
+			return 0;
+		}
 	}
 	
 	//设置分页
@@ -547,12 +562,12 @@ class Model
 			foreach($row as $field=>$val){
 				if($this->hasField($field)){
 					if(is_array($val)){
-						$values[] = sprintf("'%s'",json_encode($val));
+						$values[$field] = sprintf("'%s'",json_encode($val));
 					}else{
 						if(is_null($val)){
-							$values[] = 'NULL';
+							$values[$field] = 'NULL';
 						}else{
-							$values[] = sprintf("'%s'",$this->connector->escape(trim($val)));
+							$values[$field] = sprintf("'%s'",$this->connector->escape(trim($val)));
 						}
 					}
 				}
@@ -609,9 +624,9 @@ class Model
 			return $fieldsList[md5($sql)];
 		}
 		
-		$result = $this->query($sql);
+		$list = $this->query($sql)->select();
 		$fields = array();
-		while($rs = $this->db->fetch_array($result)){
+		foreach($list as $rs){
 			$fields[] = $rs["Field"];
 		}
 		$fieldsList[md5($sql)] = $fields;
@@ -641,7 +656,7 @@ class Model
 	public function getTables(){
 		$tables = array();
 		$key = implode("_",["Tables_in",$this->config["database"]]);
-		$list = $this->connect()->query("show tables")->select();
+		$list = $this->query("show tables")->select();
 		if($list){
 			foreach($list as $k=>$val){
 				$tables[] = $val[$key];

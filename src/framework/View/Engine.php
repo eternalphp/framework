@@ -2,6 +2,7 @@
 
 namespace framework\View;
 
+use Exception;
 
 abstract class Engine
 {
@@ -16,6 +17,7 @@ abstract class Engine
 	private $sections;
 	private $tExtName = '.html';
 	private $realtime = false;
+	private $onReplaceContent = null;
 	
 	public function __construct(){
 		$this->expire = 30;
@@ -65,7 +67,21 @@ abstract class Engine
 			throw new Exception($ex->getMessage());
 		}
 		
+		if($this->onReplaceContent != null){
+			$content = call_user_func($this->onReplaceContent,$content);
+		}
+		
 		exit($content);
+	}
+	
+	/**
+	 * set callback for template content
+	 * @param callable $callback
+	 * @return $this
+	 */
+	public function setContent(callable $callback){
+		$this->onReplaceContent = $callback;
+		return $this;
 	}
 	
 	/**
@@ -76,6 +92,9 @@ abstract class Engine
 	private function getTemplateFile($tFile){
 		$tFile = str_replace(".",DIRECTORY_SEPARATOR,$tFile);
 		$this->tFile = rtrim($this->templatePath,'/') .'/'. $tFile . $this->tExtName;
+		if(!file_exists($this->tFile)){
+			throw new Exception("Template file does not exist: $this->tFile");
+		}
 		return $this->tFile;
 	}
 	
@@ -289,10 +308,12 @@ abstract class Engine
 	 */
 	private function parseVal(){
 		// 变量表达式:		
-		preg_match_all("/\{\{\s?(.*?)\s?\}\}/is",$this->tContent,$matchs);
+		preg_match_all("/@?\{\{\s?(.*?)\s?\}\}/is",$this->tContent,$matchs);
 		if($matchs[0]){
 			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf('<?=%s?>',$val),$this->tContent);
+				if(substr($matchs[0][$k],0,1) != '@'){
+					$this->tContent = str_replace($matchs[0][$k],sprintf('<?=%s?>',$val),$this->tContent);
+				}
 			}
 		}
 	}

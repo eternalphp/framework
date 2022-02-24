@@ -10,8 +10,9 @@ class Link
 	private $href;
 	private $options = array();
 	
-	public function __construct($href = '',$text = ''){
+	public function __construct($text = '',$href = ''){
 		$this->text = $text;
+		$this->href = $href;
 	}
 	
     /**
@@ -31,6 +32,16 @@ class Link
      */
 	public function text($text){
 		$this->text = $text;
+		return $this;
+	}
+	
+    /**
+     * set attr class
+     * @param string $class
+     * @return $this
+     */
+	public function title($text){
+		$this->text($text);
 		return $this;
 	}
 	
@@ -62,7 +73,7 @@ class Link
 			}
 		}
 		$attr = ($attrs)?" ".implode(' ',$attrs):"";
-		return sprintf('<a href="%s" %s>%s</a>',$attr,$this->href,$this->text);
+		return sprintf('<a href="%s" %s>%s</a>',$this->href,$attr,$this->text);
 	}
 }
 ?>

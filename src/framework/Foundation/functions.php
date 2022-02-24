@@ -4,6 +4,7 @@ use framework\Container\Container;
 use framework\Foundation\Application;
 use framework\Debug\Debug;
 use framework\Session\SessionManager;
+use framework\Util\Html\HtmlControl;
 
 function app($abstract = null, array $parameters = []){
 	if (is_null($abstract)) {
@@ -54,6 +55,45 @@ function config($key = null,$default = null){
 	}
 	
 	return config()->get($key, $default);
+}
+
+function route(){
+	return app()->get('route');
+}
+
+function getController(){
+	$controller = app()->get('route')->getController();
+	return str_replace('Action','',$controller);
+}
+
+function getAction(){
+	return app()->get('route')->getAction();
+}
+
+function getParams(){
+	
+	$params = app()->get('route')->getParams();
+	if($_GET){
+		foreach($_GET as $key=>$val){
+			$params[$key] = filter_input(INPUT_GET, $key, FILTER_DEFAULT);
+		}
+	}
+	
+	return $params;
+}
+
+function getPrefix(){
+	return app()->get('route')->getPrefix();
+}
+
+function get($name){
+	if($name == 'class'){
+		return getController();
+	}elseif($name == 'method'){
+		return getAction();
+	}else{
+		return getParams();
+	}
 }
 
 function abort($code = 404){
@@ -144,7 +184,7 @@ function L($key = null,$default = null){
 		return is_null($default) ? $key : $default;
 	}else{
 		$args = func_get_args();
-		if(count($args)>1){
+		if(count($args) > 1){
 			$args[0] = $text;
 			foreach($args as $k=>$val){
 				if(is_array($val)){
@@ -158,12 +198,44 @@ function L($key = null,$default = null){
 	
 }
 
+function HtmlControl(){
+	return new HtmlControl();
+}
+
+function menulink($data = array()){
+	$links  = array();
+	foreach($data as $k=>$val){
+		
+		$text = isset($val['icon']) ? sprintf('<i class="%s"></i>',$val['icon']) : $val['text'];
+		$val['type'] = isset($val['type']) ? $val['type'] : 'js';
+		
+		if(isset($val['type']) && $val['type'] == 'url'){
+			$links[] = HtmlControl()
+			->Link($text,$val['url'])
+			->class($val['name'])
+			->target($val['target'])
+			->title($val['text'])
+			->create();
+		}else{
+			$links[] = HtmlControl()
+			->Link($text,'javascript:void(0)')
+			->class($val['name'])
+			->title($val['text'])
+			->attr('url',$val['url'])
+			->create();
+		}
+	}
+	return implode('<span class="split"> | </span>',$links);
+}
+
 function response($content = '', $status = 200, $headers = []){
 	return app('response',array('content'=>$content,'status'=>$status,'headers'=>$headers));
 }
 
 function csrf_token(){
-	return session()->token();
+	$token = session()->token();
+	session('token',$token);
+	return $token;
 }
 
 // success({'errcode':0,'errmsg':'ok'},'parent.callback');
@@ -215,7 +287,9 @@ function fail($res = array(),$callback = 'json'){
 	}
 }
 
-function request($name,$value = false){
+function request($name,$value = false){	
+	$_GET = filter($_GET);
+	$_POST = filter($_POST, INPUT_POST);
 	if(isset($_POST[$name])){
 		return $_POST[$name];
 	}elseif(isset($_GET[$name])){
@@ -235,12 +309,49 @@ function requestInt($name,$value = false){
 	}
 }
 
+/**
+ * @param $params
+ * @param int $type
+ * @return array
+ */
+function filter($params, $type = INPUT_GET)
+{
+	$ret = [];
+	foreach ($params as $key => $param) {
+		$ret[$key] = filter_input($type, $key, FILTER_DEFAULT);
+	}
+	return $ret;
+}
+
 function url($path,$params = array()){
 	$path = '/'.trim($path,'/');
 	if($params){
 		$path = $path . "?" . urldecode(http_build_query($params));
 	}
 	return $path;
+}
+
+function autolink($data = array()){
+	$prefix = app()->get('route')->getPrefix();
+	$paths = array();
+	if($prefix != 'index'){
+		$paths[] = $prefix;
+	}
+	$params = array();
+	if($data){
+		foreach($data as $key=>$val){
+			if(is_int($key)){
+				if($val != 'index'){
+					$paths[] = $val;
+				}
+			}else{
+				$params[$key] = $val;
+			}
+		}
+	}
+	
+	$path = implode('/',$paths);
+	return url($path,$params);
 }
 
 /*

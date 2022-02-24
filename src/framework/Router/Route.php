@@ -235,7 +235,7 @@ class Route{
 		$params = $this->urlToArray($this->uri);
 		$urlParams = $this->urlToArray($url);
 		
-		if(count($urlParams) > count($patterns)){
+		if(count($urlParams) != count($patterns)){
 			return false;
 		}
 		

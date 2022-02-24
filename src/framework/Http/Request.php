@@ -144,6 +144,13 @@ class Request{
 		return $this->method() == 'DELETE';
 	}
 	
+	public function getContentType(){
+		$s = $this->getServer();
+		$contentType = $this->getServer('CONTENT_TYPE');
+		$arr = explode(";",$contentType);
+		return $arr[0];
+	}
+	
 	public function isCLI(){
 		return PHP_SAPI == 'cli';
 	}
@@ -184,7 +191,7 @@ class Request{
 	
 	public function getAjaxData(){
 		$data = array();
-		if($this->isAjax()){
+		if($this->isAjax() && $this->getContentType() != 'application/x-www-form-urlencoded'){
 			$json = file_get_contents('php://input');
 			if($json != ''){
 				$data = json_decode($json,true);

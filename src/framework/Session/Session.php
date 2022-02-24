@@ -48,6 +48,15 @@ class Session
 	}
 	
     /**
+     * get session
+     *
+     * @return array
+     */
+	public function all(){
+		return $this->Arr->get();
+	}
+	
+    /**
      * put session
      *
      * @param string $key
@@ -61,10 +70,9 @@ class Session
 	}
 	
     /**
-     * put session
+     * remove session
      *
      * @param string $key
-	 * @param string $value
      * @return bool
      */
 	public function remove($key){
@@ -72,6 +80,42 @@ class Session
 		$this->sessionData = $this->Arr->get();
 		$this->handle->write($this->getId(),serialize($this->sessionData));
 		return true;
+	}
+	
+    /**
+     * remove session
+     *
+     * @param string $key
+     * @return bool
+     */
+	public function forget($key){
+		$this->remove($key);
+		return true;
+	}
+	
+    /**
+     * remove session
+     *
+     * @param string $key
+     * @return bool
+     */
+	public function flush(){
+		$this->Arr->clear();
+		$this->sessionData = $this->Arr->get();
+		$this->handle->write($this->getId(),serialize($this->sessionData));
+		return true;
+	}
+	
+    /**
+     * pull session
+     *
+     * @param string $key
+     * @return bool
+     */
+	public function pull($key,$default = null){
+		$value = $this->get($key,$default);
+		$this->remove($key);
+		return $value;
 	}
 	
 	public function getSessionHandle(){

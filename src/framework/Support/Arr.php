@@ -145,6 +145,16 @@ class Arr
 	}
 	
     /**
+     * remove value from array 
+     * @param string $key
+     * @return bool
+     */
+	public function clear(){
+		$this->arrayList = [];
+		return true;
+	}
+	
+    /**
      * get list from array 
      * @param string $key
 	 * @param string $value

@@ -13,6 +13,7 @@ class Select
 	private $options = array();
 	private $items;
 	private $keys = array('name','value');
+	private $defaultItem = array();
 	
 	public function __construct($id,$items = array(),$value = ''){
 		$this->id = $id;
@@ -38,8 +39,25 @@ class Select
      * @param string $value
      * @return $this
      */
+	public function field($key,$value){
+		$this->keys = [$key,$value];
+		return $this;
+	}
+	
+    /**
+     * set input value
+     * @param string $value
+     * @return $this
+     */
 	public function value($value){
 		$this->value = $value;
+		return $this;
+	}
+	
+	public function setDefault($name,$value){
+		if($name !=''){
+			$this->defaultItem[$name] = $value;
+		}
 		return $this;
 	}
 	
@@ -92,6 +110,14 @@ class Select
 		}
 		
 		$items = array();
+		
+		if($this->defaultItem){
+			foreach($this->defaultItem as $key => $val){
+				$text = (is_string($key) && $key != '') ? $key : $val;
+				$items[] = '<option value="'.$val.'">'.$text.'</option>';
+			}
+		}
+		
 		if($this->items){
 			foreach($this->items as $key=>$val){
 				if(is_array($val)){
