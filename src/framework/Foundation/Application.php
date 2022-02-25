@@ -34,7 +34,7 @@ class Application
 	public static function getInstance(){
 		if(self::$instance == null){
 			self::$instance = new self();
-			defined("ROOT") || self::$instance->setBasePath(ROOT);
+			defined("ROOT") && self::$instance->setBasePath(ROOT);
 		}
 		return self::$instance;
 	}

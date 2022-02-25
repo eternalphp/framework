@@ -24,6 +24,7 @@ class Console
         'list'             => command\Lists::class,
         'clear'            => command\Clear::class,
         'run'              => command\RunServer::class,
+		'serve'              => command\Serve::class,
 		'download'         => command\Download::class,
         'version'          => command\Version::class,
         'route:list'       => command\RouteList::class,
