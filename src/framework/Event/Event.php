@@ -4,23 +4,25 @@ namespace framework\Event;
 
 class Event {
 	
-	private $name = 'Event';
-	private $handlers = array();
-	private $calendar = null;
-	private $data = array();
+	/*
+	 事件名称
+	 **/
+	protected $name = 'Event';
 	
-	public function __construct($data = array()){
-		$this->data = $data;
-	}
+	/*
+	 事件处理器
+	 **/
+	private $listeners = array();
 	
-	/**
-	 * 设置事件名称
-	 * @param string $name
-	 * @return $this;
-	 */
-	public function name($name){
-		$this->name = $name;
-		return $this;
+	/*
+	 事件处理数据
+	 **/
+	private $payload = array();
+	
+	public function __construct($payload = array()){
+		
+		$this->payload = $payload;
+		
 	}
 	
 	/**
@@ -29,25 +31,16 @@ class Event {
 	 * @param HandlerInterface | callable $handler
 	 * @return $this;
 	 */
-	public function handler($name,$handler){
+	public function bind($name,$handler){
+		
 		if($handler instanceof HandlerInterface){
-			$this->handlers[$name] = $handler;
+			$this->listeners[$name] = $handler;
 		}elseif(is_callable($handler)){
-			$this->handlers[$name] = $handler;
+			$this->listeners[$name] = $handler;
 		}else{
-			$this->handlers[$name] = app($handler);
+			$this->listeners[$name] = app($handler);
 		}
 		
-		return $this;
-	}
-	
-	/**
-	 * 设置数据
-	 * @param array $data
-	 * @return $this;
-	 */
-	public function data($data = array()){
-		$this->data = $data;
 		return $this;
 	}
 	
@@ -64,32 +57,24 @@ class Event {
 	 * @param string $name;
 	 * @return object;
 	 */
-	public function getHandler(){
-		return $this->handlers;
+	public function getListeners(){
+		return $this->listeners;
 	}
 	
 	/**
 	 * 获取数据
 	 * @return array
 	 */
-	public function getData(){
-		return $this->data;
+	public function getPayload(){
+		return $this->payload;
 	}
 	
 	/**
-	 * 获取日历对象
-	 * @return object
+	 * 获取数据
+	 * @return array
 	 */
-	public function getCalendar(){
-		return $this->calendar;
-	}
-	
-	/**
-	 * 设置日历对象
-	 * @return object
-	 */
-	public function calendar($calendar){
-		$this->calendar = $calendar;
+	public function setPayload($payload){
+		$this->payload = $payload;
 		return $this;
 	}
 }

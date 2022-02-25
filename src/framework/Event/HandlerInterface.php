@@ -9,6 +9,6 @@ Interface HandlerInterface {
 	 * @param array $data
 	 * @return void
 	 */
-	function handle($data = array());
+	function handle($event);
 }
 ?>

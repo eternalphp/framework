@@ -5,6 +5,7 @@ use framework\Foundation\Application;
 use framework\Debug\Debug;
 use framework\Session\SessionManager;
 use framework\Util\Html\HtmlControl;
+use framework\Event\Dispatcher;
 
 function app($abstract = null, array $parameters = []){
 	if (is_null($abstract)) {
@@ -93,6 +94,15 @@ function get($name){
 		return getAction();
 	}else{
 		return getParams();
+	}
+}
+
+function event($event = null){
+	$dispatcher = Dispatcher::getInstance();
+	if($event != null){
+		$dispatcher->fire($event);
+	}else{
+		return $dispatcher;
 	}
 }
 

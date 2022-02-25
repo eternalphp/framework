@@ -63,7 +63,7 @@ class Application
      *
      * @return void
      */
-	public function Start(){
+	public function Start($environment = 1){
 		
 		$this->container->bind('Filesystem',Filesystem::class);
 		$this->load();
@@ -71,7 +71,10 @@ class Application
 		$this->loadLanguage();
 		$this->loadRoute();
 		$this->init();
-		$this->dispatch();
+		
+		if($environment == 1){
+			$this->dispatch();
+		}
 		
 	}
 	

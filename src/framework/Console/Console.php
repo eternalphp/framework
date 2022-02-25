@@ -26,6 +26,7 @@ class Console
         'run'              => command\RunServer::class,
 		'serve'              => command\Serve::class,
 		'download'         => command\Download::class,
+		'listen'         => command\Listen::class,
         'version'          => command\Version::class,
         'route:list'       => command\RouteList::class,
         'service:discover' => command\ServiceDiscover::class,
