@@ -203,6 +203,20 @@ class Control
 	}
 	
     /**
+     * drop table if exists
+     *
+	 * @param string $table
+     * @return bool
+     */
+	public function dropIfExists($table){
+		if($this->hasTable($table)){
+			$table = new Table($table);
+			$sql = $table->drop();
+			return $this->connect()->execute($sql);
+		}
+	}
+	
+    /**
      * Get Fields
      *
 	 * @param  string  $table

@@ -120,9 +120,12 @@ class Output extends StreamOutput
 	
     /**
      * 输出表格
-     * @param string $message
+     * @param array $data
+	 * @param bool $showLine
+	 * @param callable $callback
+	 * @return output
      */
-    public function table(array $data,callable $callback = null)
+    public function table(array $data,$showLine = true,callable $callback = null)
     {
 		$this->style
 		->setForeground('default')
@@ -134,7 +137,7 @@ class Output extends StreamOutput
 		
 		$table = new Table($this->style);
 		$headers = [];
-
+		
 		if($data){
 			
 			foreach($data[0] as $key=>$value){
@@ -151,7 +154,7 @@ class Output extends StreamOutput
 				$table->addRow(array_values($rows));
 			}
 			
-			$table->display();
+			$table->display($showLine);
 		}
     }
 	

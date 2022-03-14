@@ -2,6 +2,7 @@
 
 namespace framework\Console\output\table;
 
+use framework\Console\output\formatter\Style;
 use framework\Exception\InvalidArgumentException;
 
 class Row
@@ -13,6 +14,8 @@ class Row
 	private $columns = [];
 	
 	private $cloumnStyle = '│';
+	
+	private $style = null;
 	
 	public function __construct(array $columns = []){
 		$this->columns = $columns;
@@ -56,6 +59,25 @@ class Row
 		}
 		
 		return maxWidth;
+	}
+	
+    /**
+     * 设置行样式
+	 * param callable $callback
+     * @return $this
+     */
+	public function setStyle(callable $callback){
+		$this->style = new Style();
+		call_user_func($callback,$this->style);
+		return $this;
+	}
+	
+    /**
+     * 获取行样式
+     * @return Style
+     */
+	public function getStyle(){
+		return $this->style;
 	}
 	
 	public function getRow(){

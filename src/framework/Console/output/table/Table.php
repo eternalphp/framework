@@ -5,6 +5,8 @@ namespace framework\Console\output\table;
 use framework\Console\Output;
 use framework\Console\output\formatter\Style;
 use framework\Exception\InvalidArgumentException;
+use framework\Console\output\Formatter;
+
 
 class Table
 {
@@ -32,6 +34,7 @@ class Table
 	public function addRow(array $values = []){
 		$row = new Row();
 		foreach($values as $value){
+			$value = empty($value) ? "" : $value;
 			$row->addColumn($value);
 		}
 		$this->rows[] = $row;
@@ -48,6 +51,10 @@ class Table
 			$row->addColumn($value);
 		}
 		$this->header = $row;
+		$row->setStyle(function($style){
+			$style->setForeground('green');
+			$style->setBackground('default');
+		});
 	}
 	
     /**
@@ -122,25 +129,34 @@ class Table
 	
     /**
      * 打印表格
+	 * @param bool showLine
      * @return output
      */
-	public function display(){
+	public function display($showLine = true){
 
 		$this->setColWidth();
 		$rowWidth = $this->getRowWidth() + 1;
 		
 		if($this->header instanceof Row){
-			$this->displayRowLine($rowWidth);
-			$this->write($this->header->getRow());
+			if($showLine) $this->displayRowLine($rowWidth);
+			$header = $this->header->getRow();
+			
+			//表头设置样式
+			preg_match_all('/(\w)+/',$header,$matchs);
+			foreach($matchs[0] as $text){
+				$header = str_replace($text,$this->header->getStyle()->text($text),$header);
+			}
+			
+			$this->write($header);
 			$this->displayRowLine($rowWidth,'=');
 		}else{
-			$this->displayRowLine($rowWidth);
+			if($showLine) $this->displayRowLine($rowWidth);
 		}
 		
 		if($this->rows){
 			foreach($this->rows as $row){
 				$this->write($row->getRow());
-				$this->displayRowLine($rowWidth);
+				if($showLine) $this->displayRowLine($rowWidth);
 			}
 		}
 	}

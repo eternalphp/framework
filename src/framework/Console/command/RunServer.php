@@ -7,18 +7,20 @@ use framework\Console\input\Command;
 use framework\Console\Output;
 use framework\Console\Input;
 use framework\Exception\InvalidArgumentException;
+use framework\Console\PhpDevServe;
 
 class RunServer extends Command
 {
     public function configure()
     {
         // 指令配置
-        $this->setName('run')
-            ->setDescription('PHP Built-in Server for ThinkPHP');
+        $this->setName('serve')
+            ->setDescription('Serve the application on the PHP development server');
     }
 
     public function execute(Input $input, Output $output)
     {
-        $output->error('run server-----------------------');
+		$serve = new PhpDevServe(public_path(''));
+		$serve->listen();
     }
 }

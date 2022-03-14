@@ -34,7 +34,7 @@ class MySqliConnector implements ConnectorInterface
 	public function connect(){
 		$this->connection = mysqli_connect($this->servername,$this->username,$this->password,$this->database,$this->port);
 		if(!$this->connection){
-			$this->error("Could not connect：". mysqli_connect_error());
+			$this->error("Could not connect");
 		}
 		$this->charset($this->charset);
 	}
@@ -57,7 +57,7 @@ class MySqliConnector implements ConnectorInterface
 	public function query($sql){
 		$this->result = mysqli_query($this->connection,$sql);
 		if(!$this->result){
-			throw new DatabaseException($sql);
+			throw new DatabaseException(sprintf("error: %s , sql: %s",mysqli_error($this->connection),$sql));
 		}
 	}
 	
@@ -181,7 +181,7 @@ class MySqliConnector implements ConnectorInterface
 		if($this->connection != null){
 			$error = mysqli_error($this->connection);
 		}else{
-			$error = mysqli_connect_error();
+			$error = iconv('gbk','utf-8', mysqli_connect_error());
 		}
 		throw new DatabaseException(sprintf("%s：%s",$message,$error));
 	}

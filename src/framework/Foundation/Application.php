@@ -223,6 +223,18 @@ class Application
 	}
 	
     /**
+     * get database path
+     *
+	 * @param string $path
+     * @return string
+     */
+	public function databasePath($path = ''){
+		$paths = array($this->basePath,'database');
+		if($path != '') $paths[] = $path;
+		return implode(DIRECTORY_SEPARATOR,$paths);
+	}
+	
+    /**
      * application init
      *
      * @return void

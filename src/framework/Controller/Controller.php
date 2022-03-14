@@ -2,6 +2,7 @@
 
 namespace framework\Controller;
 use framework\Container\Container;
+use framework\Support\GlobalData;
 use stdClass;
 use Exception;
 
@@ -52,6 +53,15 @@ class Controller
 			}else{
 				$path = implode('/',array($namespace,$path));
 			}
+		}
+		
+		if(GlobalData::all()){
+			
+			foreach(GlobalData::all() as $key=>$val){
+				$this->viewData->$key = $val;
+			}
+			
+			$data['globalData'] = GlobalData::all();
 		}
 		
 		$data['viewData'] = $this->viewData;

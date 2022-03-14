@@ -17,9 +17,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"framework\\Database\\Connection\\": "src/framework/Database/Connection/",
-			"framework\\Database\\Schema\\": "src/framework/Database/Schema/",
-			"framework\\Database\\Eloquent\\": "src/framework/Database/Eloquent/",
+			"framework\\Database\\": "src/framework/Database/",
 			"framework\\Container\\": "src/framework/Container/",
 			"framework\\Router\\": "src/framework/Router/",
 			"framework\\Support\\": "src/framework/Support/",

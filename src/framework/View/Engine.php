@@ -258,45 +258,66 @@ abstract class Engine
 			}
 		}
 		
-		preg_match_all("/@if\s?\((.*?)\)\s+/is",$this->tContent,$matchs);
+		preg_match_all("/@if\s?\(\((.*?)\)\)/is",$this->tContent,$matchs);
 		if($matchs[0]){
 			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf('<?php if(%s) {?>',$val),$this->tContent);
+				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php if(%s) {?>",$val),$this->tContent);
 			}
 		}
 		
-		preg_match_all("/@elseif\s?\((.*?)\)\s+/is",$this->tContent,$matchs);
+		preg_match_all("/@if\s?\((.*?)\)/is",$this->tContent,$matchs);
 		if($matchs[0]){
 			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf('<?php } elseif(%s) {?>',$val),$this->tContent);
+				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php if(%s) {?>",$val),$this->tContent);
+			}
+		}
+		
+		preg_match_all("/@elseif\s?\(\((.*?)\)\)/is",$this->tContent,$matchs);
+		if($matchs[0]){
+			foreach($matchs[1] as $k=>$val){
+				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php } elseif(%s) {?>",$val),$this->tContent);
+			}
+		}
+		
+		preg_match_all("/@elseif\s?\((.*?)\)/is",$this->tContent,$matchs);
+		if($matchs[0]){
+			foreach($matchs[1] as $k=>$val){
+				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php } elseif(%s) {?>",$val),$this->tContent);
 			}
 		}
 		
 		preg_match_all("/@else/is",$this->tContent,$matchs);
 		if($matchs[0]){
 			foreach($matchs[0] as $val){
-				$this->tContent = str_replace($val,'<?php } else {?>',$this->tContent);
+				$this->tContent = str_replace($val,"<?php } else {?>",$this->tContent);
 			}
 		}
 		
 		preg_match_all("/@endif/is",$this->tContent,$matchs);
 		if($matchs[0]){
 			foreach($matchs[0] as $val){
-				$this->tContent = str_replace($val,'<?php }?>',$this->tContent);
+				$this->tContent = str_replace($val,"<?php }?>",$this->tContent);
 			}
 		}
 		
-		preg_match_all("/@foreach\((.*?)\)\s+/is",$this->tContent,$matchs);
+		preg_match_all("/@foreach\(\((.*?)\)\)/is",$this->tContent,$matchs);
 		if($matchs[0]){
 			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf('<?php foreach(%s) {?>',$val),$this->tContent);
+				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php foreach(%s) {?>",$val),$this->tContent);
+			}
+		}
+		
+		preg_match_all("/@foreach\((.*?)\)/is",$this->tContent,$matchs);
+		if($matchs[0]){
+			foreach($matchs[1] as $k=>$val){
+				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php foreach(%s) {?>",$val),$this->tContent);
 			}
 		}
 		
 		preg_match_all("/@endforeach/is",$this->tContent,$matchs);
 		if($matchs[0]){
 			foreach($matchs as $val){
-				$this->tContent = str_replace($val[0],'<?php }?>',$this->tContent);
+				$this->tContent = str_replace($val[0],"<?php }?>",$this->tContent);
 			}
 		}
 		
@@ -313,6 +334,8 @@ abstract class Engine
 			foreach($matchs[1] as $k=>$val){
 				if(substr($matchs[0][$k],0,1) != '@'){
 					$this->tContent = str_replace($matchs[0][$k],sprintf('<?=%s?>',$val),$this->tContent);
+				}else{
+					$this->tContent = str_replace($matchs[0][$k],ltrim($matchs[0][$k],'@'),$this->tContent);
 				}
 			}
 		}

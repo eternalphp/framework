@@ -42,6 +42,10 @@ function app_path($path){
 	return application()->appPath($path);
 }
 
+function database_path($path){
+	return application()->databasePath($path);
+}
+
 function config_path($path){
 	return application()->configPath($path);
 }
@@ -64,7 +68,7 @@ function route(){
 
 function getController(){
 	$controller = app()->get('route')->getController();
-	return str_replace('Action','',$controller);
+	return str_replace(['Action','Controller'],['',''],$controller);
 }
 
 function getAction(){
@@ -297,9 +301,7 @@ function fail($res = array(),$callback = 'json'){
 	}
 }
 
-function request($name,$value = false){	
-	$_GET = filter($_GET);
-	$_POST = filter($_POST, INPUT_POST);
+function request($name,$value = false){
 	if(isset($_POST[$name])){
 		return $_POST[$name];
 	}elseif(isset($_GET[$name])){

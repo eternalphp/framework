@@ -22,6 +22,7 @@ class Command
     private $requiredCount;
     private $hasAnArrayArgument = false;
     private $hasOptional;
+	private $isGroup = false;
 	
     /**
      * @var Option[]
@@ -68,6 +69,25 @@ class Command
     public function getName()
     {
         return $this->name;
+    }
+	
+    /**
+     * 添加到分组指令
+     * @return $this
+     */
+    public function addGroup()
+    {
+        $this->isGroup = true;
+		return $this;
+    }
+	
+    /**
+     * 是否分组指令
+     * @return $this
+     */
+    public function isGroup()
+    {
+        return $this->isGroup;
     }
 	
     /**
@@ -234,7 +254,7 @@ class Command
      * @throws \LogicException
      * @api
      */
-    public function addOption($name,$shortcut,callable $callback)
+    public function addOption($name,$shortcut = '',callable $callback)
     {
 		$option = new Option($name,$shortcut);
 		call_user_func($callback,$option);

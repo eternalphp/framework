@@ -70,6 +70,14 @@ class Route{
 	}
 	
 	/**
+	 * 获取完整路由uri 
+	 * @return string;
+	 */
+	public function getFullUri(){
+		return $this->prefix . '/' . ltrim($this->uri,'/');
+	}
+	
+	/**
 	 * 获取路由prefix
 	 * @return string;
 	 */
@@ -107,6 +115,14 @@ class Route{
 	 */
 	public function isCallback(){
 		return is_callable($this->callback);
+	}
+	
+	/**
+	 * 获取回调方法
+	 * @return string
+	 */
+	public function getCallback(){
+		return $this->callback;
 	}
 	
 	/**

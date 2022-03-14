@@ -23,14 +23,21 @@ class Console
         'help'             => command\Help::class,
         'list'             => command\Lists::class,
         'clear'            => command\Clear::class,
-        'run'              => command\RunServer::class,
-		'serve'              => command\Serve::class,
+		'make'             => command\Make::class,
+		'make:controller'  => command\Controller::class,
+		'make:model'       => command\Model::class,
+		'make:service'     => command\Service::class,
+		'make:middleware'  => command\Middleware::class,
+		'make:migration'   => command\Migration::class,
+		'migration'        => command\MigrationRun::class,
+        'serve'            => command\RunServer::class,
 		'download'         => command\Download::class,
-		'listen'         => command\Listen::class,
+		'listen'           => command\Listen::class,
         'version'          => command\Version::class,
         'route:list'       => command\RouteList::class,
         'service:discover' => command\ServiceDiscover::class,
         'vendor:publish'   => command\VendorPublish::class,
+		'view:clear'       => command\View::class,
     ];
 	protected $commands = [];
 	
@@ -175,7 +182,12 @@ class Console
 			$elements[] = "Available commands:";
 			
 			foreach($commands as $name=>$command){
-				$elements[] = sprintf("  %s%s",str_pad($name,$strWidth," "),$command->getDescription());
+				
+				if($command->isGroup()){
+					$elements[] = sprintf("  %s%s",str_pad("  " . $name,$strWidth," "),$command->getDescription());
+				}else{
+					$elements[] = sprintf("  %s%s",str_pad($name,$strWidth," "),$command->getDescription());
+				}
 			}
 			
 			$elements[] = "\n";

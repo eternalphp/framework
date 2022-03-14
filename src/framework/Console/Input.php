@@ -46,13 +46,21 @@ class Input
 				
 				if(strpos($argv, '--') === 0){
 					$name = ltrim($argv,'--');
-					$this->options[] = $name;
+					$arr = explode("=",$name);
+					$name = $arr[0];
+					$value = isset($arr[1]) ? $arr[1] : true;
+					$this->options[$name] = $value;
 					continue;
 				}
 				
 				if(strpos($argv, '-') === 0){
 					$name = ltrim($argv,'-');
-					$this->shortOptions[] = $name;
+					
+					$arr = explode("=",$name);
+					$name = $arr[0];
+					$value = isset($arr[1]) ? $arr[1] : true;
+					
+					$this->shortOptions[$name] = $value;
 					continue;
 				}
 				
@@ -105,6 +113,14 @@ class Input
      */
 	public function getShortOptions(){
 		return $this->shortOptions;
+	}
+	
+    /**
+     * 获取选项
+	 * @return array
+     */
+	public function getOption(string $name){
+		return $this->options[$name];
 	}
 	
     /**
