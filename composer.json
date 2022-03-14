@@ -17,7 +17,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"framework\\": "src/framework/",
+			"framework\\": "src/framework/"
 		},
 		"files":[
 			"src/framework/Foundation/functions.php"
