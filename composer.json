@@ -1,9 +1,9 @@
 {
     "name": "eternalphp/framework",
-    "description": "eternalphp/framework",
+    "description": "The eternalphp Framework.",
     "type": "library",
     "license": "MIT",
-	"keywords": ["framework"],
+	"keywords": ["framework","eternalphp"],
 	"authors": [
 		{
 			"name": "yuanzhongyi",
@@ -17,30 +17,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"framework\\Database\\": "src/framework/Database/",
-			"framework\\Container\\": "src/framework/Container/",
-			"framework\\Router\\": "src/framework/Router/",
-			"framework\\Support\\": "src/framework/Support/",
-			"framework\\Filesystem\\": "src/framework/Filesystem/",
-			"framework\\Http\\": "src/framework/Http/",
-			"framework\\Redis\\": "src/framework/Redis/",
-			"framework\\Session\\": "src/framework/Session/",
-			"framework\\Cookie\\": "src/framework/Cookie/",
-			"framework\\Config\\": "src/framework/Config/",
-			"framework\\Cache\\": "src/framework/Cache/",
-			"framework\\Util\\": "src/framework/Util/",
-			"framework\\Foundation\\": "src/framework/Foundation/",
-			"framework\\Debug\\": "src/framework/Debug/",
-			"framework\\Exception\\": "src/framework/Exception/",
-			"framework\\View\\": "src/framework/View/",
-			"framework\\Controller\\": "src/framework/Controller/",
-			"framework\\Pipeline\\": "src/framework/Pipeline/",
-			"framework\\Logger\\": "src/framework/Logger/",
-			"framework\\Language\\": "src/framework/Language/",
-			"framework\\Validate\\": "src/framework/Validate/",
-			"framework\\Event\\": "src/framework/Event/",
-			"framework\\Middleware\\": "src/framework/Middleware/",
-			"framework\\Console\\": "src/framework/Console/"
+			"framework\\": "src/framework/",
 		},
 		"files":[
 			"src/framework/Foundation/functions.php"
