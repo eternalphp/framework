@@ -10,6 +10,7 @@ use framework\Exception\InvalidArgumentException;
 use framework\Console\output\Confirm;
 use framework\Filesystem\Filesystem;
 use Exception;
+use framework\Database\Schema\Schema;
 
 
 
@@ -25,13 +26,21 @@ class MigrationRun extends Command
     public function execute(Input $input, Output $output)
     {
 		$this->Filesystem = new Filesystem();
-		$this->Filesystem->getFiles(database_path('migrations'),function($file){
-			
+		$this->Filesystem->getFiles(database_path('migrations'),function($file) use($output){
+
 			require $file;
-			
-			$arr = explode("_",basename($file));
+
+			$arr = explode("_",basename($file,'.php'));
+
 			$class = new $arr[1];
+			
+			Schema::onMessage(function($message) use($output){
+				$output->success($message);
+			});
+			
 			$class->up();
+			
+
 		});
     }
 }

@@ -35,15 +35,24 @@ class Migration extends Command
 
     public function execute(Input $input, Output $output)
     {
+		$method = 'create';
+		
         $name = $input->getArgument('name');
 		
 		$table = $input->getOption('create');
 		
+		if($input->hasOption('table')){
+			$method = 'table';
+			
+			$table = $input->getOption('table');
+		}
+
 		$content = file_get_contents($this->getPath());
 		
-        $content = str_replace(['{%migration_name%}','{%table_name%}'], [
+        $content = str_replace(['{%migration_name%}','{%table_name%}','{%method_name%}'], [
             $name,
-			$table
+			$table,
+			$method
         ], $content);
 		
 		$fileName = date("YmdHis_") . $name;

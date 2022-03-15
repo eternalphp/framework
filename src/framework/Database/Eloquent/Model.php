@@ -673,7 +673,7 @@ class Model
      * @return bool
      */
 	final public function hasTable($table){
-		$table = $this->tableName($table);
+		$table = $this->getTableName($table);
 		if(in_array($table,$this->getTables())){
 			return true;
 		}else{
@@ -688,6 +688,11 @@ class Model
 		}
 		
 		return $this->table;
+	}
+	
+	//获取当前定义的表名
+	public function getTableName($name){
+		return $this->prefix . $name;
 	}
 	
 	//获取当前定义的表名

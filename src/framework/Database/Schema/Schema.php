@@ -1,6 +1,6 @@
 <?php
 
-use framework\Database\Schema;
+namespace framework\Database\Schema;
 
 class Schema{
 	
@@ -8,20 +8,7 @@ class Schema{
 	
 	public static function getInstance(){
 		if(self::$instance == null){
-			
-			$config = Config("database");
-			
-			$cfg = array(
-				'driver'=>'MySqli',
-				'servername'=>$config['DB_HOST'],
-				'username'=>$config['DB_USER'],
-				'password'=>$config['DB_PWD'],
-				'database'=>$config['DB_NAME'],
-				'port'=>$config['DB_PORT'],
-				'prefix'=>$config['DB_PREFIX']
-			);
-			
-			self::$instance = new Control($cfg);
+			self::$instance = new Control();
 		}
 		return self::$instance;
 	}

@@ -6,6 +6,7 @@ use framework\Database\Schema\Field;
 use framework\Database\Schema\Index;
 use framework\Database\Schema\uniqueIndex;
 use framework\Database\Schema\fulltextIndex;
+use framework\Database\Eloquent\DB;
 
 class Table
 {
@@ -16,6 +17,7 @@ class Table
 	private $comment = '';
 	private $fields = [];
 	private $indexs = []; //索引
+	private $sql;
 
 	public function __construct($name){
 		$this->name = $name;
@@ -530,6 +532,20 @@ class Table
 	}
 	
     /**
+     * Change oldName to newName for table
+     *
+	 * @param string $oldName
+	 * @param string $newName
+     * @return bool
+     */
+	public function renameColumn($oldName,$newName){
+		$section = $this->getFieldSection($oldName);
+		$section = str_replace($oldName,$newName,$section);
+		$this->sql = sprintf("ALTER TABLE %s CHANGE %s %s",$this->name,$oldName,$section);
+		return DB::query($this->sql);
+	}
+	
+    /**
      * Modify the table name
      *
 	 * @param string $tableName
@@ -546,7 +562,8 @@ class Table
      * @return string
      */
 	public function dropColumn($field){
-		return sprintf("ALTER TABLE %s DROP %s;",$this->name,$field);
+		$this->sql = sprintf("ALTER TABLE %s DROP %s;",$this->name,$field);
+		return DB::query($this->sql);
 	}
 	
     /**
@@ -556,6 +573,47 @@ class Table
      */
 	public function drop(){
 		return sprintf("DROP TABLE IF EXISTS `%s`;",$this->name);
+	}
+	
+    /**
+     * get last sql
+     *
+     * @return string
+     */
+	public function getLastSql(){
+		return $this->sql;
+	}
+	
+    /**
+     * Get Field Section
+     *
+	 * @param  string  $table
+     * @return array
+     */
+	public function getFieldSection($name){
+		static $fields = array();
+		if(!$fields){
+			$row = DB::query("show create table $this->name")->find();
+			if($row){
+				$sections = explode("\n",$row["Create Table"]);
+				if($sections){
+					foreach($sections as $k=>$section){
+						if($k > 0){
+							if(strstr($section,"PRIMARY KEY") || strstr($section,"INDEX") || strstr($section,"KEY") || strstr($section,"UNIQUE") || strstr($section,"FULLTEXT") || strstr($section,"FOREIGN KEY")){
+								continue;
+							}else{
+								preg_match("/`(.*?)`/",$section,$matchs);
+								if($matchs){
+									$fields[$matchs[1]] = trim(trim($section),",");
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		return $fields[$name];
 	}
 	
     /**
