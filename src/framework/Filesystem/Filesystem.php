@@ -62,7 +62,7 @@ class Filesystem
             return $this->put($path, $content.$this->get($path));
         }
 
-        return $this->put($path, $data);
+        return $this->put($path, $content);
     }
 	
     /**

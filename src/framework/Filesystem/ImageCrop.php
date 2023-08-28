@@ -85,7 +85,7 @@ class ImageCrop
 		if($y > 0) $this->thumbY = $y;
 		
 		$this->image->truecolor()->create($this->thumbWidth,$this->thumbHeight);
-		$this->srcImage = $this->image->load($filename);
+		$this->srcImage = $this->image->load($this->filename);
 		
 		imagecopyresampled($this->image->getImage(),$this->srcImage , $this->thumbX, $this->thumbY, $this->cropX, $this->cropY, $this->thumbWidth, $this->thumbHeight, $this->cropWidth, $this->cropHeight);
 		

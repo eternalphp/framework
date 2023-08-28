@@ -79,7 +79,7 @@ class Console
      * 输出空行
      * @param int $count
      */
-    public function newLine(int $count = 1): void
+    public function newLine(int $count = 1)
     {
         $this->output->write(str_repeat(PHP_EOL, $count));
     }
@@ -128,9 +128,15 @@ class Console
     }
 	
 	public function loadCommands(){
-		foreach($this->defaultCommands as $name=>$class){
-			$this->getCommand($name);
-		}
+        try {
+            foreach($this->defaultCommands as $name=>$class){
+                $this->getCommand($name);
+            }
+        }catch (InvalidArgumentException $e){
+            $this->output->error($e->getMessage());
+            $this->output->info("");
+        }
+
 	}
 	
 	public function getCommands(){
@@ -149,11 +155,17 @@ class Console
 		
 		if(isset($this->defaultCommands[$name])){
 			$class = $this->defaultCommands[$name];
-			$this->app->bind($name,$class);
-			$this->app->get($name)->configure();
-			$this->commands[$name] = $this->app->get($name);
-			
-			return $this->commands[$name];
+
+			if(class_exists($class)) {
+                $this->app->bind($name, $class);
+                $this->app->get($name)->configure();
+                $this->commands[$name] = $this->app->get($name);
+
+			    return $this->commands[$name];
+            }else{
+                throw new InvalidArgumentException("can not find class: $class");
+            }
+
 		}else{
 			throw new InvalidArgumentException("can not find command: $name");
 		}

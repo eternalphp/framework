@@ -331,7 +331,7 @@ class Application
 			}
 			
 		}catch(BaseException $ex){
-			$e->showError();
+			$ex->showError();
 			//throw new Exception($ex->getMessage());
 		}
 	}

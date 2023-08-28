@@ -86,16 +86,10 @@ class Image
 		}
 	}
 	
-	$this->image->thumb(function($cropImage){
-		$cropImage->load($filename)
-		->crop($width,$height,$x,$y)
-		->save();
-	})
-	
 	public function save($filename = null){
 		if($filename != null){
 			$fileExts = explode(".",basename($filename));
-			$fileExt = strtolower($fileExt[1]);
+			$fileExt = strtolower($fileExts[1]);
 			switch($fileExt){
 				case 'jpg':
 				case 'jpeg':
