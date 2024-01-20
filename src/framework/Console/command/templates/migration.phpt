@@ -15,6 +15,9 @@
  */
 
 
+use framework\Database\Schema\Control;
+use framework\Database\Eloquent\Model;
+use framework\Database\Schema\Table;
 use framework\Database\Schema\Schema;
 use framework\Database\Migrations\Migration;
 
@@ -27,12 +30,8 @@ class {%migration_name%} extends Migration
      */
     public function up()
     {
-		Schema::{%method_name%}("{%table_name%}",function($table){
+		Schema::create("{%table_name%}",function($table){
 			$table->integer("id")->unsigned()->increments();
-			$table->string("name");
-			$table->string("title");
-			$table->integer("age");
-			//$table->dropColumn('name');
 		});
     }
 

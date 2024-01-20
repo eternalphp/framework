@@ -14,7 +14,7 @@ class Version extends Command
     {
         // 指令配置
         $this->setName('version')
-            ->setDescription('show thinkphp framework version');
+            ->setDescription('show eternalphp framework version');
     }
 
     public function execute(Input $input, Output $output)

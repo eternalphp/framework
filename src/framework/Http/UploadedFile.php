@@ -18,7 +18,7 @@ class UploadedFile{
 	public function __construct($path){
 		$this->savePath = $path;
 		$this->files = new File($_FILES);
-		$this->filename = rtrim($this->savePath,'/') . $this->files->filename;
+		$this->filename = rtrim($this->savePath,'/') . $this->files->getFilename();
 	}
 	
     /**

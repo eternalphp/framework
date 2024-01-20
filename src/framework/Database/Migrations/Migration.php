@@ -1,15 +1,13 @@
 <?php
 
-namespace framework\Database\Migrations;
+use framework\Database\Migrations;
 
-abstract class Migration{
+class Migration{
 	
 	public function __construct(){
+		
 	}
 	
-	abstract public function up();
-	
-	abstract public function down();
 	
 }
 ?>

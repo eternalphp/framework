@@ -101,6 +101,12 @@ function get($name){
 	}
 }
 
+
+/**
+ * 同步事件
+ * @param null $event
+ * @return Dispatcher|null
+ */
 function event($event = null){
 	$dispatcher = Dispatcher::getInstance();
 	if($event != null){
@@ -108,6 +114,20 @@ function event($event = null){
 	}else{
 		return $dispatcher;
 	}
+}
+
+/**
+ * 异步事件
+ * @param null $event
+ * @return Dispatcher|null
+ */
+function trigger($event = null){
+    $dispatcher = Dispatcher::getInstance();
+    if($event != null){
+        $dispatcher->trigger($event);
+    }else{
+        return $dispatcher;
+    }
 }
 
 function abort($code = 404){
@@ -501,45 +521,45 @@ function time2Units($date){
 }
 
 /**
-  CURL 请求
-*/
+CURL 请求
+ */
 function https_request($url,$data = null,$options = array()){
-	$curl = curl_init();
-	curl_setopt($curl, CURLOPT_URL, $url);
-	
-	curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-	curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, $url);
 
-	
-	if (!empty($data)){
-		curl_setopt($curl, CURLOPT_POST, 1);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
-	}
-	curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-	if(isset($options['timeout']) && $options['timeout']>0) curl_setopt($curl, CURLOPT_TIMEOUT,$options['timeout']);
-	
-	if(isset($options["return_header"])){
-		curl_setopt($curl, CURLOPT_HEADER, $options["return_header"]);
-	}
-	
-	if(isset($options['header']) && is_array($options['header']) && $options['header']){
-		curl_setopt($curl, CURLOPT_HTTPHEADER,$options['header']);
-	}elseif(isset($options['cookie']) && !empty($options['cookie'])){
-		curl_setopt($curl, CURLOPT_COOKIE, $options['cookie']);
-	}
-	
-	//保存cookie文件路径
-	if(isset($options['saveCookieFile']) && $options['saveCookieFile']!=''){
-		curl_setopt($curl, CURLOPT_COOKIEJAR, $options['saveCookieFile']); 
-	}
-	
-	//读取cookie文件路径
-	if(isset($options['readCookieFile']) && $options['readCookieFile']!=''){
-		curl_setopt($curl, CURLOPT_COOKIEFILE, $options['readCookieFile']); 
-	}
+    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
 
-	curl_setopt ( $curl, CURLOPT_FOLLOWLOCATION, 1); 
-	$output = curl_exec($curl);
-	curl_close($curl);
-	return $output;
+
+    if (!empty($data)){
+        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+    }
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+    if(isset($options['timeout']) && $options['timeout']>0) curl_setopt($curl, CURLOPT_TIMEOUT,$options['timeout']);
+
+    if(isset($options["return_header"])){
+        curl_setopt($curl, CURLOPT_HEADER, $options["return_header"]);
+    }
+
+    if(isset($options['header']) && is_array($options['header']) && $options['header']){
+        curl_setopt($curl, CURLOPT_HTTPHEADER,$options['header']);
+    }elseif(isset($options['cookie']) && !empty($options['cookie'])){
+        curl_setopt($curl, CURLOPT_COOKIE, $options['cookie']);
+    }
+
+    //保存cookie文件路径
+    if(isset($options['saveCookieFile']) && $options['saveCookieFile']!=''){
+        curl_setopt($curl, CURLOPT_COOKIEJAR, $options['saveCookieFile']);
+    }
+
+    //读取cookie文件路径
+    if(isset($options['readCookieFile']) && $options['readCookieFile']!=''){
+        curl_setopt($curl, CURLOPT_COOKIEFILE, $options['readCookieFile']);
+    }
+
+    curl_setopt ( $curl, CURLOPT_FOLLOWLOCATION, 1);
+    $output = curl_exec($curl);
+    curl_close($curl);
+    return $output;
 }

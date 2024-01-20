@@ -12,9 +12,6 @@ namespace framework\Database\Relation;
 
 use framework\Database\Eloquent\Model;
 
-
-if(!defined('BASEPATH')) exit('No direct script access allowed');
-
 class BelongsTo extends Relation{
 	
 	public function __construct(Model $parent, string $model, string $foreignKey, string $localKey){

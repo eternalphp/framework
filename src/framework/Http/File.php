@@ -19,7 +19,6 @@ class File{
 		$this->size = $file["size"]/1024; //kb
 		$this->tmp_name = $file["tmp_name"];
 		$this->errcode = $file["error"];
-		$this->filename = sprintf("%s.%s",uniqid(),$this->getFileExtension());
 		switch($this->errcode) {
 			case 1:
 				$this->errmsg = '上传的文件超过了 php.ini 中 upload_max_filesize 选项限制的值';
@@ -68,6 +67,15 @@ class File{
 	public function getSize(){
 		return $this->size;
 	}
+
+	/**
+     * get size of upload file
+     *
+     * @return int
+     */
+	public function getFileSize(){
+		return $this->size / 1024;
+	}
 	
     /**
      * get path upload file
@@ -86,6 +94,16 @@ class File{
 	public function getFileExtension(){
 		$pathinfo = pathinfo($this->getFilePath());
 		return $pathinfo['extension'];
+	}
+
+	/**
+     * get filename
+     *
+     * @return string
+     */
+	public function getFilename(){
+		$this->filename = sprintf("%s.%s",uniqid(),$this->getFileExtension());
+		return $this->filename;
 	}
 	
     /**

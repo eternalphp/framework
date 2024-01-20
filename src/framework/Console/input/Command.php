@@ -122,11 +122,13 @@ class Command
      * @param Argument $argument 参数
      * @throws \LogicException
      */
-    public function addArgument($name,callable $callback)
+    public function addArgument($name,callable $callback = null)
     {
 		
 		$argument = new Argument($name);
-		call_user_func($callback,$argument);
+        if($callback != null){
+		    call_user_func($callback,$argument);
+        }
 
         if (isset($this->arguments[$argument->getName()])) {
             throw new InvalidArgumentException(sprintf('[%s] An argument with name "%s" already exists.', $this->getName(),$argument->getName()));

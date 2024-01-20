@@ -91,7 +91,7 @@ class ValidateRule{
 						if(isset($this->validators[$funcs[0]])){
 							$class = $this->validators[$funcs[0]];
 						}else{
-							throw new Exception("Validator [$class] does not exist.");
+							throw new Exception("Validator class does not exist.");
 						}
 						
 						$method = $funcs[1];

@@ -215,8 +215,13 @@ class Request{
 		$data = $this->getData();
 		return $data;
 	}
-	
-	public function toJson($data = array()){
+
+	public function __get($name)
+    {
+        return $this->input($name);
+    }
+
+    public function toJson($data = array()){
 		return json_encode($data);
 	}
 	

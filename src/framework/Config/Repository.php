@@ -15,6 +15,8 @@ class Repository implements ArrayAccess, ConfigInterface
      */
     protected $items = [];
 
+    protected $Arr;
+
     /**
      * Create a new configuration repository.
      *

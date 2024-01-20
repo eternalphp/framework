@@ -8,15 +8,13 @@
   
 **************************************/
 
-namespace System\Core\Relation;
+namespace framework\Database\Relation;
 
 use framework\Database\Eloquent\Model;
-use framework\Container\Container;
-
-
-if(!defined('BASEPATH')) exit('No direct script access allowed');
 
 class BelongsToMany extends Relation{
+
+	private $middle;
 	
 	public function __construct(Model $parent, string $model, string $middle, string $foreignKey, string $localKey){
 		$this->parent = $parent;
@@ -34,7 +32,7 @@ class BelongsToMany extends Relation{
      * @return Model
      */
 	public function createMiddleModel(){	
-		Loader::getContainer()->bind($this->middle,array(
+		app()->bind($this->middle,array(
 			'class'=>$this->middle
 		));
 	}
@@ -45,7 +43,7 @@ class BelongsToMany extends Relation{
      * @return Model
      */
 	public function getMiddleModel(){
-		return Loader::getContainer()->get($this->middle);
+		return app()->get($this->middle);
 	}
 	
 	public function belongsToManyQuery(){

@@ -415,7 +415,7 @@ class BuildQuery{
      * Get sql of the query statement
      * @return string
      */
-	public function getSql(){
+	public function getSql($hasLimit = true){
 		$sql = array();
 
 		$table = implode(",", $this->tables);
@@ -448,7 +448,7 @@ class BuildQuery{
 			$sql = array_merge($sql, $this->unions);
 		}
 		
-		if(!empty($this->limit)){
+		if(!empty($this->limit) && $hasLimit){
 			$sql[] = $this->limit;
 		}
 

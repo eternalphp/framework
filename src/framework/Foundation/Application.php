@@ -25,6 +25,8 @@ class Application
 	private $basePath;
 	private $services = [];
 	static $instance = null;
+	private $configs;
+	private $items;
 	
 	public function __construct($basePath = ''){
 		$this->basePath = $basePath;
@@ -102,7 +104,7 @@ class Application
         }
 
         if (property_exists($service, 'bind')) {
-            $this->bind($service->bind);
+            $this->container->bind($service->bind);
         }
 
         $this->services[] = $service;
@@ -246,7 +248,7 @@ class Application
 		//默认编码
 		ini_set('default_charset', $this->config('config.charset','utf-8'));
 		//魔法反斜杠转义关闭
-		ini_set('magic_quotes_runtime', $this->config('config.magic_quotes_runtime',1));
+		ini_set('magic_quotes_runtime', $this->config('config.magic_quotes_runtime',0));
 
 		$this->container->get('logger')->init();
 	}
@@ -330,9 +332,8 @@ class Application
 				}
 			}
 			
-		}catch(BaseException $ex){
-			$ex->showError();
-			//throw new Exception($ex->getMessage());
+		}catch(Exception $ex){
+			throw new Exception($ex->getMessage());
 		}
 	}
 	
@@ -404,7 +405,7 @@ class Application
      */
 	public function loadService(){
 		//绑定基本类
-		$registers = $this->config("app.aliases");
+		$registers = (array)$this->config("app.aliases");
 		if($registers){
 			foreach($registers as $key=>$class){
 				$this->container->bind($key,$class);
@@ -412,7 +413,7 @@ class Application
 		}
 		
 		//注册服务
-		$services = $this->config("app.providers");
+		$services = (array)$this->config("app.providers");
 		if($services){
 			foreach($services as $service){
 				$this->register($service);

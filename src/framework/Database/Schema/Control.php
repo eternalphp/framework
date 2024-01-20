@@ -2,16 +2,43 @@
 
 namespace framework\Database\Schema;
 
-use framework\Database\Eloquent\DB;
+use framework\Database\Schema\Field;
+use framework\Database\Schema\Table;
+use framework\Database\Connection\Connector;
 
 class Control
 {
+	private $config = null; //配置参数 
+	private $connector = null; //数据库链接对象
 	private $tableList = array(); //创建的表对象列表
+	private $displayMessage = false; //是否显示消息
 	private $displayDebug = false; //是否启用调试
-	private $callback = null;
 
-	public function __construct(){
-
+	public function __construct($config = array()){
+		$this->config = $config;
+	}
+	
+    /**
+     * Create Connector
+     *
+     * @return connector
+     */
+	public function connect(){
+		if($this->connector == null){
+			$this->connector = new Connector($this->config);
+			$this->connector->connect();
+		}
+		return $this->connector;
+	}
+	
+    /**
+     * Display message
+     *
+     * @return $this;
+     */
+	public function displayMessage(){
+		$this->displayMessage = true;
+		return $this;
 	}
 	
     /**
@@ -32,15 +59,13 @@ class Control
      * @return void
      */
 	public function create($table,callable $callback){
-		$shortName = $table;
-
-		$table = DB::getTableName($table);
+		$table = $this->getTableName($table);
 		$this->table = new Table($table);
 		$this->tableList[$table] = $this->table;
 		call_user_func($callback,$this->table);
 		
-		if(DB::hasTable($shortName) == false){
-			$result = DB::query($this->table->getSql());
+		if($this->hasTable($table) == false){
+			$result = $this->connect()->execute($this->table->getSql());
 			if($result){
 				$this->message(sprintf("create table : %s \n",$table));
 			}
@@ -69,7 +94,7 @@ class Control
 						if(!in_array($field->getAlias(),$tableFields)){
 							
 							$sql = $this->table->changeColumn($name);
-							$result = DB::query($sql);
+							$result = $this->connect()->execute($sql);
 							if($result){
 								$this->message(sprintf("alter table %s change column : %s \n",$table,$name));
 								
@@ -86,7 +111,7 @@ class Control
 					if(!in_array($name,$tableFields)){
 						
 						$sql = $this->table->addColumn($name,$lastField);
-						$result = DB::query($sql);
+						$result = $this->connect()->execute($sql);
 						if($result){
 							$this->message(sprintf("alter table %s add column : %s \n",$table,$name));
 							
@@ -104,7 +129,7 @@ class Control
 							
 							if(isset($oldFields[$name]) && $oldFields[$name] != $field->getSection()){
 								$sql = $this->table->updateColumn($name);
-								$result = DB::query($sql);
+								$result = $this->connect()->execute($sql);
 								if($result){
 									$this->message(sprintf("alter table %s modify column : %s \n",$table,$name));
 									
@@ -126,8 +151,8 @@ class Control
 			if($tableFields){
 				foreach($tableFields as $field){
 					if(!in_array($field,$fieldNames)){
-						$result = $this->table->dropColumn($field);
-						$sql = $this->table->getLastSql();
+						$sql = $this->table->dropColumn($field);
+						$result = $this->connect()->execute($sql);
 						if($result){
 							$this->message(sprintf("alter table %s drop column : %s \n",$table,$field));
 							
@@ -145,84 +170,36 @@ class Control
 	}
 	
     /**
-     * modify Table
+     * Get Tables
      *
-     * @param  string  $table
-     * @param  callable  $callback
-     * @return void
+     * @return array
      */
-	public function table($table,callable $callback){
-		$shortName = $table;
-
-		$table = DB::getTableName($table);
-		
-		$oldTableFields = $this->getFields($table);
-		
-		$this->table = new Table($table);
-		$this->tableList[$table] = $this->table;
-		call_user_func($callback,$this->table);
-		
-		$sections = $this->getSections($table);
-		$oldFields = $sections["fields"];
-
-		//获取表中的字段
-		$tableFields = $this->getFields($table);
-		
-		$fields = $this->table->getFields();
-		
-		if($fields){
-			$lastField = end($tableFields);
-			foreach($fields as $name=>$field){
-				
-				//表示要添加字段
-				if(!in_array($name,$tableFields)){
-					
-					$sql = $this->table->addColumn($name,$lastField);
-					$result = DB::query($sql);
-					if($result){
-						$this->message(sprintf("alter table %s add column : %s \n",$table,$name));
-						
-						if($this->displayDebug == true){
-							$this->message(sprintf("add column: %s \n",$sql));
-						}
-					}
-					
-				}else{
-					
-					//判断字段是否修改
-					if($oldFields){
-						
-						$name = ($field->getAlias() != null) ? $field->getAlias() : $name;
-						
-						if(isset($oldFields[$name]) && $oldFields[$name] != $field->getSection()){
-							$sql = $this->table->updateColumn($name);
-							$result = DB::query($sql);
-							if($result){
-								$this->message(sprintf("alter table %s modify column : %s \n",$table,$name));
-								
-								if($this->displayDebug == true){
-									$this->message(sprintf("modify column: %s \n",$sql));
-								}
-								
-							}
-						}
-					}
-				}
-				
-				$lastField = $name;
+	public function getTables(){
+		$tables = array();
+		$key = implode("_",["Tables_in",$this->config["database"]]);
+		$list = $this->connect()->query("show tables")->select();
+		if($list){
+			foreach($list as $k=>$val){
+				$tables[] = $val[$key];
 			}
 		}
-		
-		
-		//检查是否有字段删除
-		if($oldTableFields){
-			foreach($oldTableFields as $field){
-				if(!in_array($field,$tableFields)){
-					$this->message(sprintf("alter table %s drop column : %s \n",$table,$field));
-				}
-			}
+		unset($list);
+		return $tables;
+	}
+	
+    /**
+     * Judging whether the table exists
+     *
+	 * @param string $table
+     * @return bool
+     */
+	public function hasTable($table){
+		$tables = $this->getTables();
+		if(in_array($table,$tables)){
+			return true;
+		}else{
+			return false;
 		}
-		
 	}
 	
     /**
@@ -232,10 +209,10 @@ class Control
      * @return bool
      */
 	public function dropIfExists($table){
-		if(DB::hasTable($table)){
-			$table = new Table(DB::getTableName($table));
+		if($this->hasTable($table)){
+			$table = new Table($table);
 			$sql = $table->drop();
-			return DB::query($sql);
+			return $this->connect()->execute($sql);
 		}
 	}
 	
@@ -247,7 +224,7 @@ class Control
      */
 	public function getFields($table){
 		$fields = array();
-		$list = DB::query("desc $table")->select();
+		$list = $this->connect()->query("desc $table")->select();
 		if($list){
 			foreach($list as $k=>$val){
 				$fields[] = $val["Field"];
@@ -266,7 +243,7 @@ class Control
 	public function getSections($table){
 		$fields = array();
 		$indexs = array();
-		$row = DB::query("show create table $table")->find();
+		$row = $this->connect()->query("show create table $table")->find();
 		if($row){
 			$sections = explode("\n",$row["Create Table"]);
 			if($sections){
@@ -306,20 +283,22 @@ class Control
      * @return array
      */
 	public function message($message){
-		if($this->callback != null){
-			call_user_func($this->callback,$message);
+		if($this->displayMessage == true){
+			echo $message;
 		}
 	}
 	
     /**
-     * set callback of message
+     * Get TableName
      *
-	 * @param callable $callback
-     * @return $this
+	 * @param  string  $table
+     * @return string
      */
-	public function onMessage(callable $callback){
-		$this->callback = $callback;
-		return $this;
+	public function getTableName($table){
+		if(isset($this->config["prefix"])){
+			$table = sprintf("%s%s",$this->config["prefix"],$table);
+		}
+		return $table;
 	}
 
 }

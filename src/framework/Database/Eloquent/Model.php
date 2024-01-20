@@ -20,11 +20,13 @@ class Model
 	private $sql;
 	protected  $callback = null;
 	private $listenQuery = false;
-	private $buildQuery;
+	private $buildQuery = null;
 	protected $timestamps = false;
     const CREATED_AT = 'createtime';
     const UPDATED_AT = 'updatetime';
 	protected $relations = [];
+	protected $pages;
+	protected $model;
 	
 	public function __construct($config = array()){
 		
@@ -47,11 +49,7 @@ class Model
 			$this->prefix = $this->config["prefix"];
 		}
 		
-		$this->buildQuery = new BuildQuery($this->prefix);
-		
-		if($this->table){
-			$this->buildQuery->table($this->table);
-		}
+        $this->initBuildQuery();
 		
 		$this->model = $this;
 	}
@@ -76,7 +74,7 @@ class Model
 			if($method == 'table'){
 				$this->buildQuery = new BuildQuery($this->prefix);
 			}
-			
+            $this->initBuildQuery();
 			call_user_func_array(array($this->buildQuery,$method),$args);
 			
 		}else{
@@ -84,6 +82,16 @@ class Model
 		}
 		return $this;
 	}
+
+	private function initBuildQuery(){
+	    if($this->buildQuery == null) {
+            $this->buildQuery = new BuildQuery($this->prefix);
+
+            if ($this->table) {
+                $this->buildQuery->table($this->table);
+            }
+        }
+    }
 	
     /**
      * Query find
@@ -91,15 +99,18 @@ class Model
      * @return $this
      */
 	final public function find(){
-		
+        $this->initBuildQuery();
 		$this->sql = $this->buildQuery->getSql();
+        $this->buildQuery = null;
 		
 		$row = $this->query($this->sql)->find();
 		
 		if($this->relations){
+
 			foreach($this->relations as $name=>$relation){
 				if($relation instanceof HasOne){
 					$field = $relation->getForeignKey();
+	
 					$row[$name] = $relation->getModel()->where($field,$row[$field])->find();
 				}
 				
@@ -130,8 +141,10 @@ class Model
      * @return $this
      */
 	final public function first($id){
+        $this->initBuildQuery();
 		$this->buildQuery->where($this->primaryKey,$id);
 		$this->sql = $this->buildQuery->getSql();
+        $this->buildQuery = null;
 		return $this->query($this->sql)->find();
 	}
 
@@ -141,6 +154,7 @@ class Model
      * @return $this
      */
 	final public function select(){
+        $this->initBuildQuery();
 		$this->sql = $this->buildQuery->getSql();
 		$list = $this->query($this->sql)->select();
 		if($this->pages){
@@ -176,7 +190,7 @@ class Model
 				}
 			}
 		}
-		
+        $this->buildQuery = null;
 		return $list;
 	}
 	
@@ -186,7 +200,7 @@ class Model
 	
 	//返回数据行数
 	final public function rows(){
-		$sql = $this->buildQuery->getSql();
+		$sql = $this->buildQuery->getSql(false);
 		$sql = sprintf("select count(*) as count from(%s) as s",$sql);
 		$res = $this->query($sql)->find();
 		
@@ -215,7 +229,7 @@ class Model
 		if($options){
 			$params = array_merge($params,$options);
 		}
-		
+
 		
 		$rows = $this->rows();
 		$total = max(ceil($rows / $pagesize), 1); //总页数
@@ -234,7 +248,7 @@ class Model
 	}
 	
 	final public function paginate($pageSize = 30){
-		
+        $this->initBuildQuery();
 		$rows = $this->rows();
 		$pagination = new pagination($rows,$pageSize);
 		
@@ -264,8 +278,10 @@ class Model
 	//分批获取数据
 	final public function chunk($pagesize,callable $callback){
 		$page = 1;
+        $buildQuery = $this->buildQuery;
 		do{
 			$_GET["page"] = $page;
+			$this->buildQuery = $buildQuery;
 			$this->offset($pagesize);
 			$list = $this->select();
 			call_user_func($callback,$list,$pagesize,$page);
@@ -347,7 +363,7 @@ class Model
 		$this->sql = $this->buildQuery->getSql();
 
 		$row = $this->query($this->sql)->find();
-		
+        $this->buildQuery = null;
 		if(isset($row[$field])){
 			return $row[$field];
 		}
@@ -377,6 +393,7 @@ class Model
 			$data = $this->getData($data);
 		}
 		$this->sql = $this->buildQuery->insert($data,$rows);
+        $this->buildQuery = null;
 		return $this->query($this->sql)->insert();
 		
 	}
@@ -395,6 +412,7 @@ class Model
 			$data = $this->getData($data);
 		}
 		$this->sql = $this->buildQuery->update($data);
+        $this->buildQuery = null;
 		return $this->query($this->sql);
 	}
 
@@ -408,6 +426,7 @@ class Model
      */
 	final public function replace($field = array(), $data = array()){
 		$this->sql = $this->buildQuery->sql_replace($field,$data);
+        $this->buildQuery = null;
 		return $this->query($this->sql);
 	}
 
@@ -427,6 +446,7 @@ class Model
 			$data = $this->getData($data);
 		}
 		$this->sql = $this->buildQuery->replace($data,$rows);
+        $this->buildQuery = null;
 		return $this->query($this->sql);
 	}
 	
@@ -437,6 +457,7 @@ class Model
      */
 	final public function delete(){
 		$this->sql = $this->buildQuery->delete();
+        $this->buildQuery = null;
 		return $this->query($this->sql);
 	}
 
@@ -519,13 +540,17 @@ class Model
 	
 	//懒加载
 	public function with($name,callable $callback = null){
-		$model = call_user_func_array(array($this,$name),array());
-		
-		if($callback != null){
-			call_user_func($callback,$model->getModel());
-		}
-		
-		$this->relations[$name] = $model;
+
+        if(method_exists($this,$name)){
+            $model = call_user_func_array(array($this,$name),array());
+
+           	if($callback != null){
+               	call_user_func($callback,$model->getModel());
+           	}
+
+           	$this->relations[$name] = $model;
+        }
+
 		return $this;
 	}
 	
@@ -582,7 +607,7 @@ class Model
      * @return string
      */
 	public function getSql(){
-		$this->sql = $this->buildQuery->getSql();
+		//$this->sql = $this->buildQuery->getSql();
 		return $this->sql;
 	}
 	
@@ -673,7 +698,7 @@ class Model
      * @return bool
      */
 	final public function hasTable($table){
-		$table = $this->getTableName($table);
+		$table = $this->tableName($table);
 		if(in_array($table,$this->getTables())){
 			return true;
 		}else{
@@ -691,11 +716,6 @@ class Model
 	}
 	
 	//获取当前定义的表名
-	public function getTableName($name){
-		return $this->prefix . $name;
-	}
-	
-	//获取当前定义的表名
 	public function fullTableName($alias = ''){
 		if($alias != ''){
 			return sprintf("%s as %s",$this->prefix . $this->table,$alias);
@@ -708,5 +728,9 @@ class Model
 	public function primaryKey(){
 		return $this->primaryKey;
 	}
+
+	public function close(){
+        $this->connect()->close();
+    }
 }
 ?>

@@ -7,7 +7,8 @@ use framework\Filesystem\Image;
 class ImageCrop
 {
 	
-	private $image;
+	private $image; //目标图片
+	private $srcImage; //原图片
 	private $width; //原图宽度
 	private $height; //原图高度
 	private $filename;
@@ -77,7 +78,7 @@ class ImageCrop
 	 * @param int $y
 	 * @return $this
 	 */
-	public function crop($width = 0,$height = 0,$x = 0,$y = 0){
+	public function crop($filename,$width = 0,$height = 0,$x = 0,$y = 0){
 		
 		if($width > 0) $this->thumbWidth = $width;
 		if($height > 0) $this->thumbHeight = $height;
@@ -85,9 +86,10 @@ class ImageCrop
 		if($y > 0) $this->thumbY = $y;
 		
 		$this->image->truecolor()->create($this->thumbWidth,$this->thumbHeight);
-		$this->srcImage = $this->image->load($this->filename);
+		$this->srcImage = new Image();
+		$this->srcImage->load($filename);
 		
-		imagecopyresampled($this->image->getImage(),$this->srcImage , $this->thumbX, $this->thumbY, $this->cropX, $this->cropY, $this->thumbWidth, $this->thumbHeight, $this->cropWidth, $this->cropHeight);
+		imagecopyresampled($this->image->getImage(),$this->srcImage->getImage(), $this->thumbX, $this->thumbY, $this->cropX, $this->cropY, $this->thumbWidth, $this->thumbHeight, $this->cropWidth, $this->cropHeight);
 		
 		$type = $this->image->getFileExtension($this->filename);
 		if($type == 'gif' || $type == 'png'){

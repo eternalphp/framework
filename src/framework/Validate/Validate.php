@@ -6,6 +6,7 @@ class Validate{
 	
 	private $rules = array();
 	private $errors = array();
+	private $rule;
 	
 	public function __construct(){
 

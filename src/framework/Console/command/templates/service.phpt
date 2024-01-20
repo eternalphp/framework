@@ -16,7 +16,6 @@
 
 
 namespace App\{%path_name%}\Services;
-use App\{%path_name%}\{%service_name%};
 use framework\Database\Eloquent\DB;
 
 class {%service_name%} {
@@ -30,7 +29,7 @@ class {%service_name%} {
      *
      * @return array
      */
-	function getIist(){
+	function getList(){
 		
 	}
 	
@@ -70,4 +69,3 @@ class {%service_name%} {
 		
 	}
 }
-?>

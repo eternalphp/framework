@@ -24,6 +24,7 @@ class Console
         'list'             => command\Lists::class,
         'clear'            => command\Clear::class,
 		'make'             => command\Make::class,
+        'make:command'     => command\Command::class,
 		'make:controller'  => command\Controller::class,
 		'make:model'       => command\Model::class,
 		'make:service'     => command\Service::class,
@@ -38,6 +39,7 @@ class Console
         'service:discover' => command\ServiceDiscover::class,
         'vendor:publish'   => command\VendorPublish::class,
 		'view:clear'       => command\View::class,
+        'storage:link'     => command\Link::class
     ];
 	protected $commands = [];
 	
@@ -79,7 +81,7 @@ class Console
      * 输出空行
      * @param int $count
      */
-    public function newLine(int $count = 1)
+    public function newLine(int $count = 1): void
     {
         $this->output->write(str_repeat(PHP_EOL, $count));
     }
@@ -128,15 +130,9 @@ class Console
     }
 	
 	public function loadCommands(){
-        try {
-            foreach($this->defaultCommands as $name=>$class){
-                $this->getCommand($name);
-            }
-        }catch (InvalidArgumentException $e){
-            $this->output->error($e->getMessage());
-            $this->output->info("");
-        }
-
+		foreach($this->defaultCommands as $name=>$class){
+			$this->getCommand($name);
+		}
 	}
 	
 	public function getCommands(){
@@ -155,17 +151,11 @@ class Console
 		
 		if(isset($this->defaultCommands[$name])){
 			$class = $this->defaultCommands[$name];
-
-			if(class_exists($class)) {
-                $this->app->bind($name, $class);
-                $this->app->get($name)->configure();
-                $this->commands[$name] = $this->app->get($name);
-
-			    return $this->commands[$name];
-            }else{
-                throw new InvalidArgumentException("can not find class: $class");
-            }
-
+			$this->app->bind($name,$class);
+			$this->app->get($name)->configure();
+			$this->commands[$name] = $this->app->get($name);
+			
+			return $this->commands[$name];
 		}else{
 			throw new InvalidArgumentException("can not find command: $name");
 		}

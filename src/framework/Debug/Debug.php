@@ -41,14 +41,13 @@ class Debug extends Exception{
 		$line[] = date("Y-m-d H:i:s");
 		$line[] = parent::getLine();
 		$line[] = parent::getFile();
-		
-		print_r($this->message);
-		
 		if(is_array($this->message)){
 			$message = print_r($this->message,true);
 		}elseif(is_object($this->message)){
 			$message = var_export($this->message,true);
-		}
+		}else{
+		    $message = $this->message;
+        }
 		$line[] = $message;
 		return implode($this->splitStr,$line)."\r\n";
 	}

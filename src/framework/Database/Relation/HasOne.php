@@ -8,15 +8,12 @@
   
 **************************************/
 
-namespace System\Core\Relation;
+namespace framework\Database\Relation;
 
 use framework\Database\Eloquent\Model;
 
-
-if(!defined('BASEPATH')) exit('No direct script access allowed');
-
 class HasOne extends Relation{
-	
+
 	public function __construct(Model $parent, string $model, string $foreignKey, string $localKey){
 		$this->parent = $parent;
 		$this->model = $this->parseModel($model);

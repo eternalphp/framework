@@ -11,7 +11,6 @@
 namespace framework\Database\Relation;
 
 use framework\Database\Eloquent\Model;
-use framework\Container\Container;
 
 abstract class Relation{
 	
@@ -95,9 +94,7 @@ abstract class Relation{
      * @return Model
      */
 	protected function createModel(){	
-		Container::getInstance()->bind($this->model,array(
-			'class'=>$this->model
-		));
+		app()->bind($this->model,$this->model);
 	}
 	
     /**
@@ -106,7 +103,7 @@ abstract class Relation{
      * @return Model
      */
 	public function getModel(){
-		return Container::getInstance()->get($this->model);
+		return app()->get($this->model);
 	}
 	
     /**

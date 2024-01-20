@@ -124,15 +124,6 @@ class Input
 	}
 	
     /**
-     * 判断是否包含某个选项
-	 * @param string $name
-	 * @return bool
-     */
-	public function hasOption(string $name){
-		return isset($this->options[$name]) ? true : false;
-	}
-	
-    /**
      * 获取参数
 	 * @return array
      */

@@ -32,11 +32,13 @@ class MySqliConnector implements ConnectorInterface
      * @return $this
      */
 	public function connect(){
-		$this->connection = mysqli_connect($this->servername,$this->username,$this->password,$this->database,$this->port);
-		if(!$this->connection){
-			$this->error("Could not connect");
-		}
-		$this->charset($this->charset);
+        try {
+            $this->connection = mysqli_connect($this->servername,$this->username,$this->password,$this->database,$this->port);
+            $this->charset($this->charset);
+        }catch (Exception $ex){
+            $this->error($ex->getMessage());
+        }
+
 	}
 	
     /**
@@ -88,6 +90,16 @@ class MySqliConnector implements ConnectorInterface
 		mysqli_free_result($this->result);
 		return $list;
 	}
+
+    /**
+     * @param $callback
+     */
+	public function stream($callback){
+        while(($row = mysqli_fetch_assoc($this->result)) != false){
+            call_user_func($callback,$row);
+        }
+        mysqli_free_result($this->result);
+    }
 	
     /**
      * get data first row

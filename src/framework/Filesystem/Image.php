@@ -7,7 +7,6 @@ class Image
 {
 	
 	private $image;
-	private $srcImage;
 	private $width;
 	private $height;
 	private $truecolor = false;
@@ -33,19 +32,19 @@ class Image
 			switch($fileExt){
 				case 'jpg':
 				case 'jpeg':
-					$this->srcImage = imageCreateFromJPEG($filename);
+					$this->image = imageCreateFromJPEG($filename);
 				break;
 				case 'png':
-					$this->srcImage = imageCreateFromPNG($filename);
+					$this->image = imageCreateFromPNG($filename);
 				break;
 				case 'gif':
-					$this->srcImage = imageCreateFromGIF($filename);
+					$this->image = imageCreateFromGIF($filename);
 				break;
 				default:
-					$this->srcImage = imageCreateFromString(file_get_contents($filename));
+				$this->image = imageCreateFromString(file_get_contents($filename));
 			}
 		}
-		return $this->srcImage;
+		return $this;
 	}
 	
 	/**
@@ -73,17 +72,6 @@ class Image
 	
 	public function interlace(){
 		imageinterlace($this->image, 1);
-	}
-	
-	public function crop(){
-		$this->image->truecolor()->create($width,$height);
-		imagecopyresampled($newImg->getImage(), $this->image->getImage(), $x, $y, $this->cropX, $this->cropY, $width, $height, $this->cropWidth, $this->cropHeight);
-		$type = $this->image->getFileExtension($this->filename);
-		if($type == 'gif' || $type == 'png'){
-			$this->image->transparent();
-		}else{
-			$this->image->interlace();
-		}
 	}
 	
 	public function save($filename = null){

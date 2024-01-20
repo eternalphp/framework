@@ -8,7 +8,7 @@
   
 **************************************/
 
-namespace System\Core\Relation;
+namespace framework\Database\Relation;
 
 use framework\Database\Eloquent\Model;
 

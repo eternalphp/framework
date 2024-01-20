@@ -184,7 +184,7 @@ abstract class Engine
 		preg_match_all("/@include\([\'\"]+(.*?)[\'\"]+\)/",$this->tContent,$matchs);
 		if($matchs[0]){
 			foreach($matchs[1] as $k=>$val){
-				$file = $this->getTemplateFile($val);
+				$file = (string)$this->getTemplateFile($val);
 				$content = file_get_contents($file);
 				$this->tContent = str_replace($matchs[0][$k],$content,$this->tContent);
 			}

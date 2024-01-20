@@ -50,6 +50,15 @@ class Arr
 	public function exists($key){
 		return array_key_exists($key, $this->arrayList);
 	}
+
+    /**
+     * find key form array
+     * @param string $key
+     * @return bool
+     */
+	public function has($key){
+		return $this->exists($key);
+	}
 	
     /**
      * get value of array 

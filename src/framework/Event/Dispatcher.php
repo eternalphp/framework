@@ -58,10 +58,10 @@ class Dispatcher {
 	 * @return void
 	 */
 	public function listen(callable $callback = null){
-		
+
+        $Filesystem = new Filesystem();
 		while($this->running){
-			
-			$Filesystem = new Filesystem();
+
 			$Filesystem->getFiles(storage_path("events"),function($file,$type){
 				if($type == 'file'){
 					$event = unserialize(file_get_contents($file));

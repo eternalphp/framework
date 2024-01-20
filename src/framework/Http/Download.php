@@ -97,7 +97,6 @@ class Download
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
         curl_setopt($ch, CURLOPT_HEADER, TRUE);
-        curl_setopt($ch, CURLOPT_NOBODY, TRUE);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 2000);
         //设置关闭SSL
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
