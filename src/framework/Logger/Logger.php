@@ -302,9 +302,11 @@ class Logger{
 			$view = new View();
 			$view->templatePath(__DIR__);
 			$view->cachePath(__DIR__ . "/cache/");
+			ob_clean();
 			$view->assign("title","NOTICE");
 			$view->assign("message",implode("<br><br>",$this->logs));
 			$view->display("views.notice");
+			exit;
 		}
 	}
 

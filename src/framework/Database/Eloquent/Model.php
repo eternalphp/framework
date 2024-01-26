@@ -25,7 +25,7 @@ class Model
     const CREATED_AT = 'createtime';
     const UPDATED_AT = 'updatetime';
 	protected $relations = [];
-	protected $pages;
+	public $pages;
 	protected $model;
 	
 	public function __construct($config = array()){
@@ -274,6 +274,17 @@ class Model
 		$data->data = $list;
 		return $data;
 	}
+
+    /**
+     * @param null $name
+     * @return int
+     */
+	public function getPages($name = null){
+	    if($name == null){
+	        return $this->pages;
+        }
+	    return $this->pages[$name] ?? 0;
+    }
 	
 	//分批获取数据
 	final public function chunk($pagesize,callable $callback){
@@ -314,7 +325,7 @@ class Model
      * @return array
      */
 	final public function toList($key,$value = null,$data = null){
-		
+
 		if($data == null){
 			$data = $this->select();
 		}
@@ -354,7 +365,7 @@ class Model
      * @return $this
      */
 	final public function getVal($field){
-		
+        $this->initBuildQuery();
 		$fields = $this->buildQuery->getFields();
 		if($fields[0] != $field){
 			$this->buildQuery->field(sprintf("%s as %s",$fields[0],$field),0);
@@ -379,6 +390,7 @@ class Model
      * @return int
      */
 	final public function insert($data = array(),$rows = false){
+        $this->initBuildQuery();
 		if($rows === true){
 			foreach($data as $k=>$row){
 				if($this->timestamps){
@@ -405,6 +417,7 @@ class Model
      * @return int
      */
 	final public function update($data = array()){
+        $this->initBuildQuery();
 		if(is_array($data)){
 			if($this->timestamps){
 				$data[self::UPDATED_AT] = date('Y-m-d H:i:s');
@@ -425,6 +438,7 @@ class Model
      * @return int
      */
 	final public function replace($field = array(), $data = array()){
+        $this->initBuildQuery();
 		$this->sql = $this->buildQuery->sql_replace($field,$data);
         $this->buildQuery = null;
 		return $this->query($this->sql);
@@ -438,6 +452,7 @@ class Model
      * @return int
      */
 	final public function replaceInto($data = array(),$rows = false){
+        $this->initBuildQuery();
 		if($rows === true){
 			foreach($data as $k=>$row){
 				$data[$k] = $this->getData($row);
@@ -456,6 +471,7 @@ class Model
      * @return bool
      */
 	final public function delete(){
+        $this->initBuildQuery();
 		$this->sql = $this->buildQuery->delete();
         $this->buildQuery = null;
 		return $this->query($this->sql);

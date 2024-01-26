@@ -87,6 +87,18 @@ function getParams(){
 	return $params;
 }
 
+function getUrlPaths(){
+	$url = app()->get('route')->getUri();
+	$uris = explode("?", $url);
+	$uri = $uris[0];
+	return preg_split('|(?mi-Us)/+|', trim($uri, '/'));
+}
+
+function getUrlPathIndex($index){
+	$paths = getUrlPaths();
+	return $paths[$index] ?? null;
+}
+
 function getPrefix(){
 	return app()->get('route')->getPrefix();
 }
@@ -521,7 +533,7 @@ function time2Units($date){
 }
 
 /**
-CURL 请求
+ *CURL 请求
  */
 function https_request($url,$data = null,$options = array()){
     $curl = curl_init();

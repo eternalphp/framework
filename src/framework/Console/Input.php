@@ -217,15 +217,31 @@ class Input
 			$options = explode('-',$option);
 			$option = end($options);
 			
-			if(in_array($option,$this->getOptions())){
+			if(array_key_exists($option,$this->getOptions())){
 				return true;
 			}
 			
-			if(in_array($option,$this->getShortOptions())){
+			if(array_key_exists($option,$this->getShortOptions())){
 				return true;
 			}
 		}
 		
 		return false;
 	}
+
+    /**
+     * 选项判断
+     * @return bool
+     */
+    public function hasOption($name){
+        if(array_key_exists($name,$this->getOptions())){
+            return true;
+        }
+
+        if(array_key_exists($name,$this->getShortOptions())){
+            return true;
+        }
+
+        return false;
+    }
 }

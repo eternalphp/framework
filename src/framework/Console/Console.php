@@ -30,6 +30,7 @@ class Console
 		'make:service'     => command\Service::class,
 		'make:middleware'  => command\Middleware::class,
 		'make:migration'   => command\Migration::class,
+        'make:event'       => command\Event::class,
 		'migration'        => command\MigrationRun::class,
         'serve'            => command\RunServer::class,
 		'download'         => command\Download::class,
@@ -39,7 +40,8 @@ class Console
         'service:discover' => command\ServiceDiscover::class,
         'vendor:publish'   => command\VendorPublish::class,
 		'view:clear'       => command\View::class,
-        'storage:link'     => command\Link::class
+        'storage:link'     => command\Link::class,
+
     ];
 	protected $commands = [];
 	

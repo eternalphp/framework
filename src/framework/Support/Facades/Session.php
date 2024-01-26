@@ -1,0 +1,21 @@
+<?php
+
+namespace framework\Support\Facades;
+
+use framework\Support\Facade;
+
+class Session extends Facade
+{
+    /**
+     * Get the registered name of the component.
+     *
+     * @return string
+     */
+    protected static function getFacadeAccessor()
+    {
+        return [
+            'name' => 'session',
+            'class' => \framework\Session\Session::class
+        ];
+    }
+}

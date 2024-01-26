@@ -224,7 +224,7 @@ abstract class Engine
 		
 		preg_match("/@extends\([\'\"]+(.*?)[\'\"]+\)/",$this->tContent,$matchs);
 		if(isset($matchs[0])){
-			$file = $this->getTemplateFile($matchs[1]);
+			$file = (string)$this->getTemplateFile($matchs[1]);
 			$content = file_get_contents($file);
 			$this->tContent = $content;
 		}
@@ -257,6 +257,13 @@ abstract class Engine
 				}
 			}
 		}
+
+		preg_match_all("/@if\s?\(\[(.*?)\]\)/is",$this->tContent,$matchs);
+		if($matchs[0]){
+			foreach($matchs[1] as $k=>$val){
+				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php if(%s) {?>",$val),$this->tContent);
+			}
+		}
 		
 		preg_match_all("/@if\s?\(\((.*?)\)\)/is",$this->tContent,$matchs);
 		if($matchs[0]){
@@ -271,6 +278,14 @@ abstract class Engine
 				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php if(%s) {?>",$val),$this->tContent);
 			}
 		}
+
+		preg_match_all("/@elseif\s?\(\[(.*?)\]\)/is",$this->tContent,$matchs);
+		if($matchs[0]){
+			foreach($matchs[1] as $k=>$val){
+				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php } elseif(%s) {?>",$val),$this->tContent);
+			}
+		}
+
 		
 		preg_match_all("/@elseif\s?\(\((.*?)\)\)/is",$this->tContent,$matchs);
 		if($matchs[0]){
@@ -297,6 +312,13 @@ abstract class Engine
 		if($matchs[0]){
 			foreach($matchs[0] as $val){
 				$this->tContent = str_replace($val,"<?php }?>",$this->tContent);
+			}
+		}
+
+		preg_match_all("/@foreach\(\[(.*?)\]\)/is",$this->tContent,$matchs);
+		if($matchs[0]){
+			foreach($matchs[1] as $k=>$val){
+				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php foreach(%s) {?>",$val),$this->tContent);
 			}
 		}
 		
