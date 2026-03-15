@@ -86,6 +86,134 @@ src/framework/
 4. **触发 Controller**：完成中间件调度后，实例化相应的 Controller ，执行业务逻辑。
 5. **返回 Response**：通过规范的 Response 发送 HTTP 报文给客户端，并在周期末尾清理容器或触发终止事件。
 
+## ORM (Eloquent) 使用示例
+
+框架内部实现了类似于 Laravel 的 `Eloquent ORM`，支持链式操作、自动分页、关联模型与事务处理。
+
+### 1. 定义模型
+
+模型类通常需要继承 `framework\Database\Eloquent\Model`，你可以在其中指定表名或主键：
+
+```php
+namespace app\Entity;
+
+use framework\Database\Eloquent\Model;
+
+class User extends Model
+{
+    // 指定关联的数据表（如果表名为 users，框架会自动推断，但显式指定更安全）
+    protected $table = 'users';
+    
+    // 指定主键（默认为 id）
+    protected $primaryKey = 'id';
+}
+```
+
+### 2. 基础查询
+
+内置丰富的查询构造器方法，支持连贯操作：
+
+```php
+use app\Entity\User;
+
+// 根据主键查找当条数据
+$user = User::first(1);
+
+// 获取表内所有记录
+$users = User::select();
+
+// 条件查询与获取第一条结果
+$adminUser = User::where('role', 'admin')->where('status', 1)->find();
+
+// 链式查询与排序
+$latestUsers = User::where('status', 1)
+                    ->orderBy('created_at', 'DESC')
+                    ->limit(10)
+                    ->select();
+                    
+// 获取总条数
+$count = User::where('status', 1)->rows();
+
+// 简单分页功能 (自动返回带分页的数据集)
+$pageData = User::where('status', 1)->paginate(15);
+```
+
+### 3. 数据新增
+
+```php
+// 新增单条数据
+$insertData = [
+    'username' => 'testuser',
+    'email'    => 'test@example.com',
+    'status'   => 1
+];
+// 返回新增后的主键 ID
+$userId = User::insert($insertData);
+```
+
+### 4. 数据更新
+
+```php
+// 条件更新
+User::where('id', 1)->update([
+    'status' => 0,
+    'updated_at' => time()
+]);
+```
+
+### 5. 数据删除
+
+```php
+// 条件删除
+User::where('id', 1)->delete();
+```
+
+### 6. 事务操作
+
+使用事务来保证复杂写入的一致性：
+
+```php
+$userModel = new User();
+
+// 开启事务
+$userModel->startTrans();
+
+try {
+    // 执行操作 1
+    User::insert(['username' => 'user1']);
+    // 执行操作 2
+    User::where('id', 1)->update(['money' => ['+', 100]]);
+    
+    // 提交事务
+    $userModel->commit();
+} catch (\Exception $e) {
+    // 出现异常则回滚
+    $userModel->rollback();
+}
+```
+
+### 7. 模型关联（Relations）
+
+框架支持常见的关联方法（`HasOne`, `HasMany`, `BelongsTo` 等等）。
+
+```php
+class User extends Model
+{
+    // 一对多关联
+    public function articles()
+    {
+        return $this->hasMany(Article::class, 'user_id', 'id');
+    }
+}
+
+// 关联获取使用示例
+$user = User::first(1);
+// 获取其关联的文章对象或数组（根据实现细节可能会返回数据集）
+$articles = $user['articles'];
+// 或者作为方法添加附加条件
+$articles = $user->articles()->where('status', 1)->select();
+```
+
 ## 作者与协议
 
 - **Author**: yuanzhongyi (kld230@163.com)
