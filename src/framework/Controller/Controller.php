@@ -93,9 +93,9 @@ class Controller
 		header('Content-Type:application/json; charset=utf-8');
 		
 		if(isset($data['data'])){
-			$data = array_merge(array('errmsg'=> $message,'data'=> '','errcode'=> $code),$data);
+			$data = array_merge(array('errmsg'=> $message,'data'=> '','errcode'=> $code,'errorCode'=>$code),$data);
 		}else{
-			$data = array('errmsg'=> $message,'data'=> $data,'errcode'=> $code);
+			$data = array('errmsg'=> $message,'data'=> $data,'errcode'=> $code,'errorCode'=>$code);
 		}
 		
 		$this->app['response']->json($data);

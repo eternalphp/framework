@@ -30,5 +30,14 @@ class View extends Engine
 	public function display($tFile){
 		$this->load($tFile);
 	}
+
+	/**
+	 * fetch template file content
+	 * @param string $tFile
+	 * @return string;
+	 */
+	public function fetch($tFile){
+		return $this->fetchContent($tFile);
+	}
 }
 ?>

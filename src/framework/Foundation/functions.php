@@ -291,7 +291,9 @@ function success($res = array(),$callback = 'json'){
 		$errmsg = $res;
 		$res = array();
 		$res['errmsg'] = $errmsg;
-		$callback = 'parent.callback';
+		if($callback == 'json'){
+            $callback = 'parent.callback';
+        }
 	}
 	
 	if(!isset($res['errcode'])){
@@ -315,7 +317,9 @@ function fail($res = array(),$callback = 'json'){
 		$errmsg = $res;
 		$res = array();
 		$res['errmsg'] = $errmsg;
-		$callback = 'parent.callback';
+        if($callback == 'json'){
+            $callback = 'parent.callback';
+        }
 	}
 	
 	if(!isset($res['errcode'])){
@@ -471,6 +475,15 @@ function html_out($str){
 
     $str = stripslashes($str);
 	return $str;
+}
+
+function getArrayValue($data, $key){
+    $arr = new \framework\Support\Arr($data);
+    return $arr->get($key);
+}
+
+function now(){
+    return date("Y-m-d H:i:s");
 }
 
 function remainTime($date){

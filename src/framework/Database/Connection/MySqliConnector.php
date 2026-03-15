@@ -35,6 +35,11 @@ class MySqliConnector implements ConnectorInterface
         try {
             $this->connection = mysqli_connect($this->servername,$this->username,$this->password,$this->database,$this->port);
             $this->charset($this->charset);
+
+			if(!$this->connection){
+				throw new DatabaseException("error: " . mysqli_error($this->connection));
+			}
+
         }catch (Exception $ex){
             $this->error($ex->getMessage());
         }
@@ -47,7 +52,10 @@ class MySqliConnector implements ConnectorInterface
      * @return $this
      */
 	public function close(){
-		return mysqli_close($this->connection);
+	    if ($this->connection && $this->connection instanceof \mysqli) {
+		    mysqli_close($this->connection);
+		    $this->connection = null;
+		}
 	}
 	
     /**
@@ -61,6 +69,7 @@ class MySqliConnector implements ConnectorInterface
 		if(!$this->result){
 			throw new DatabaseException(sprintf("error: %s , sql: %s",mysqli_error($this->connection),$sql));
 		}
+		return $this;
 	}
 	
     /**
@@ -108,7 +117,10 @@ class MySqliConnector implements ConnectorInterface
      */
 	public function find(){
 		try{
+		    if(!$this->result) return null;
 			$row = mysqli_fetch_assoc($this->result);
+			mysqli_free_result($this->result);
+			$this->result = null;
 			return $row;
 		}catch(DatabaseException $ex){
 			echo $ex->getMessage();

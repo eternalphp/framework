@@ -8,6 +8,7 @@ use framework\Database\Relation\HasMany;
 use framework\Database\Relation\BelongsTo;
 use framework\Database\Relation\BelongsToMany;
 use Exception;
+use framework\Debug\Debug;
 use stdClass;
 
 class Model
@@ -16,6 +17,7 @@ class Model
 	protected $primaryKey = 'id';
 	private $prefix = null;
 	private $connector = null;
+	private static $connectors = []; // Connection Pool
 	private $config = null;
 	private $sql;
 	protected  $callback = null;
@@ -27,6 +29,8 @@ class Model
 	protected $relations = [];
 	public $pages;
 	protected $model;
+    protected $hiddens = ['password'];
+    protected $visibles = [];
 	
 	public function __construct($config = array()){
 		
@@ -61,11 +65,20 @@ class Model
      */
 	public function connect(){
 		if($this->connector == null){
-			$this->connector = new Connector($this->config);
-			$this->connector->connect();
+            $key = md5(json_encode($this->config));
+            if(!isset(self::$connectors[$key])){
+			    self::$connectors[$key] = new Connector($this->config);
+			    self::$connectors[$key]->connect();
+            }
+            $this->connector = self::$connectors[$key];
 		}
 		return $this->connector;
 	}
+
+	public function newInstance(){
+	    $instance = clone $this;
+	    return $instance;
+    }
 	
 	final public function __call($method,$args){
 		
@@ -92,7 +105,50 @@ class Model
             }
         }
     }
+
+    public function visible($fields){
+	    if(is_string($fields)){
+	        $this->visibles = explode(",",$fields);
+        }elseif (is_array($fields)){
+	        $this->visibles = $fields;
+        }
+	    return $this;
+    }
 	
+    protected function fetchRelations(&$row){
+        if(!$this->relations || !$row) return;
+        
+        foreach($this->relations as $name=>$relation){
+            if($relation instanceof HasOne){
+                $field = $relation->getForeignKey();
+                $row[$name] = $relation->getModel()->where($field,$row[$field])->find();
+            }
+            elseif($relation instanceof BelongsTo){
+                $primaryKey = $relation->getLocalKey();
+                $field = $relation->getForeignKey();
+                $row[$name] = $relation->getModel()->where($primaryKey,$row[$field])->find();
+            }
+            elseif($relation instanceof HasMany){
+                $field = $relation->getForeignKey();
+                $primaryKey = $relation->getLocalKey(); // Fix the bug in find() and first()
+                $row[$name] = $relation->getModel()->where($field,$row[$primaryKey])->select();
+            }
+            elseif($relation instanceof BelongsToMany){
+                $field = $relation->getLocalKey();
+                $row[$name] = $relation->belongsToManyQuery($row[$field])->select();
+            }
+        }
+    }
+
+    protected function filterHiddenFields(&$row){
+        if(!$this->hiddens || !$row) return;
+        foreach ($this->hiddens as $field){
+            if(isset($row[$field]) && !in_array($field,$this->visibles)){
+                unset($row[$field]);
+            }
+        }
+    }
+
     /**
      * Query find
      *
@@ -105,32 +161,11 @@ class Model
 		
 		$row = $this->query($this->sql)->find();
 		
-		if($this->relations){
-
-			foreach($this->relations as $name=>$relation){
-				if($relation instanceof HasOne){
-					$field = $relation->getForeignKey();
-	
-					$row[$name] = $relation->getModel()->where($field,$row[$field])->find();
-				}
-				
-				if($relation instanceof BelongsTo){
-					$primaryKey = $relation->getLocalKey();
-					$field = $relation->getForeignKey();
-					$row[$name] = $relation->getModel()->where($primaryKey,$row[$field])->find();
-				}
-				
-				if($relation instanceof HasMany){
-					$field = $relation->getForeignKey();
-					$row[$name] = $relation->getModel()->where($field,$row[$field])->select();
-				}
-				
-				if($relation instanceof BelongsToMany){
-					$field = $relation->getForeignKey();
-					$row[$name] = $relation->belongsToManyQuery()->where($field,$row[$field])->select();
-				}
-			}
-		}
+        if($row){
+            $this->fetchRelations($row);
+            $this->filterHiddenFields($row);
+        }
+        $this->relations = [];
 		
 		return $row;
 	}
@@ -145,7 +180,14 @@ class Model
 		$this->buildQuery->where($this->primaryKey,$id);
 		$this->sql = $this->buildQuery->getSql();
         $this->buildQuery = null;
-		return $this->query($this->sql)->find();
+		$row = $this->query($this->sql)->find();
+
+        if($row){
+            $this->fetchRelations($row);
+            $this->filterHiddenFields($row);
+        }
+        $this->relations = [];
+        return $row;
 	}
 
     /**
@@ -157,30 +199,19 @@ class Model
         $this->initBuildQuery();
 		$this->sql = $this->buildQuery->getSql();
 		$list = $this->query($this->sql)->select();
+        $this->buildQuery = null;
 		if($this->pages){
 			if(request('page',1) > $this->pages['total']){
 				return false;
 			}
 		}
 		
-		if($this->relations){
-			
+		if($list){
 			foreach($list as &$val){
-				foreach($this->relations as $name=>$relation){
-					
-					if($relation instanceof HasOne){
-						$field = $relation->getForeignKey();				
-						$val[$name] = $relation->getModel()->where($field,$val[$field])->find();
-					}
-					
-					if($relation instanceof BelongsTo){
-						$primaryKey = $relation->getLocalKey();
-						$field = $relation->getForeignKey();
-						$val[$name] = $relation->getModel()->where($primaryKey,$val[$field])->find();
-					}
-				}
+                $this->fetchRelations($val);
+                $this->filterHiddenFields($val);
 			}
-			
+			$this->relations = [];
 		}
 		
 		if($this->callback != null && is_callable($this->callback)){
@@ -190,7 +221,7 @@ class Model
 				}
 			}
 		}
-        $this->buildQuery = null;
+
 		return $list;
 	}
 	
@@ -256,17 +287,8 @@ class Model
 		
 			$this->buildQuery->limit($pageSize,$pagination->offset());
 			$list = $this->select();
-			
 		}else{
 			$list = array();
-		}
-		
-		if($this->callback != null && is_callable($this->callback)){
-			if($list){
-				foreach($list as $k=>&$row){
-					$row = call_user_func($this->callback,$row);
-				}
-			}
 		}
 		
 		$data = new stdClass();
@@ -600,15 +622,16 @@ class Model
 	public function getData($row = array()){
 		$values = array();
 		if($row){
+		    $fields = $this->getFields();
 			foreach($row as $field=>$val){
-				if($this->hasField($field)){
+				if(in_array($field, $fields)){
 					if(is_array($val)){
 						$values[$field] = sprintf("'%s'",json_encode($val));
 					}else{
 						if(is_null($val)){
 							$values[$field] = 'NULL';
 						}else{
-							$values[$field] = sprintf("'%s'",$this->connector->escape(trim($val)));
+							$values[$field] = sprintf("'%s'",$this->connect()->escape(trim((string)$val)));
 						}
 					}
 				}
@@ -661,7 +684,7 @@ class Model
 		
 		$sql = "describe {$table}";
 		
-		if($fieldsList[md5($sql)]){
+		if(isset($fieldsList[md5($sql)])){
 			return $fieldsList[md5($sql)];
 		}
 		
@@ -695,6 +718,9 @@ class Model
      * @return array
      */
 	public function getTables(){
+        static $tablesList = null;
+        if($tablesList !== null) return $tablesList;
+
 		$tables = array();
 		$key = implode("_",["Tables_in",$this->config["database"]]);
 		$list = $this->query("show tables")->select();
@@ -704,7 +730,8 @@ class Model
 			}
 		}
 		unset($list);
-		return $tables;
+        $tablesList = $tables;
+		return $tablesList;
 	}
 	
     /**

@@ -12,6 +12,7 @@ class PhpDevServe
 	private $port = 8080;
 	
 	private $bootFile = 'index.php';
+	private $routeFile = 'server.php';
 	
 	private $phpBin = 'php';
 	
@@ -23,6 +24,11 @@ class PhpDevServe
 	
 	public function setPort($port){
 		$this->port = $port;
+		return $this;
+	}
+
+    public function setHost($host){
+		$this->host = $host;
 		return $this;
 	}
 	
@@ -78,7 +84,7 @@ class PhpDevServe
                 throw new RuntimeException("the document root is not exists. path: $docRoot");
             }
 
-			$commands[] = "-t $docRoot";
+            $commands[] = "-t $docRoot $this->routeFile";
         }
 
         return implode(" ",$commands);

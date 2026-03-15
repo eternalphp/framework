@@ -2,6 +2,8 @@
 
 namespace framework\Http;
 
+use framework\Debug\Debug;
+
 class Request{
 	
 	private static $data = [];
@@ -93,7 +95,11 @@ class Request{
     {
         $ret = [];
         foreach ($params as $key => $param) {
-            $ret[$key] = filter_input($type, $key, FILTER_DEFAULT);
+            if(!is_array($param)){
+                $ret[$key] = filter_input($type, $key, FILTER_DEFAULT);
+            }else{
+                $ret[$key] = $param;
+            }
         }
         return $ret;
     }
@@ -116,13 +122,22 @@ class Request{
 	}
 	
 	public function isAjax(){
-		
-		if(!strtolower($this->getServer('HTTP_X_REQUESTED_WITH')) == 'xmlhttprequest'){
-			return false;
-		}
-		
-		return true;
+
+        if($this->getServer('HTTP_X_REQUESTED_WITH') != 'XMLHttpRequest'){
+            return false;
+        }
+
+        return true;
 	}
+
+    public function isJson(){
+
+        if(!strstr($this->getServer('HTTP_CONTENT_TYPE'),'application/json')){
+            return false;
+        }
+
+        return true;
+    }
 	
 	public function method(){
 		return $this->getServer('REQUEST_METHOD');
@@ -191,7 +206,7 @@ class Request{
 	
 	public function getAjaxData(){
 		$data = array();
-		if($this->isAjax() && $this->getContentType() != 'application/x-www-form-urlencoded'){
+		if($this->isJson()){
 			$json = file_get_contents('php://input');
 			if($json != ''){
 				$data = json_decode($json,true);

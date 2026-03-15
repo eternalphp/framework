@@ -2,7 +2,7 @@
 
 use framework\Database\Schema;
 
-class Schema{
+class Schema {
 	
 	public static $instance = null;
 	

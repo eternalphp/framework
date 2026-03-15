@@ -256,10 +256,10 @@ class Command
      * @throws \LogicException
      * @api
      */
-    public function addOption($name,$shortcut = '',callable $callback)
+    public function addOption($name,$shortcut = '',callable $callback = null)
     {
 		$option = new Option($name,$shortcut);
-		call_user_func($callback,$option);
+		if($callback != null) call_user_func($callback,$option);
 		
         if (isset($this->options[$option->getName()]) && !$option->equals($this->options[$option->getName()])) {
             throw new InvalidArgumentException(sprintf('An option named "%s" already exists.', $option->getName()));

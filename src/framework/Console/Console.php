@@ -67,6 +67,13 @@ class Console
 		if(file_exists(app_path('Console/Console.php'))){
 			$commands = require(app_path('Console/Console.php'));
 			if($commands){
+
+				foreach($commands as $key=>$class) {
+					if(!class_exists($class)){
+						throw new Exception("Class $class not exists!");
+					}
+				}
+
 				$this->defaultCommands = array_merge($this->defaultCommands,$commands);
 			}
 		}
@@ -202,7 +209,12 @@ class Console
 	
 	public function run(){
 		
-		$this->load();
+		try{
+			$this->load();
+		}catch(Exception $e){
+			$this->output->error($e->getMessage());
+			exit;
+		}
 		
 		$name = $this->input->getCommandName();
 
@@ -219,9 +231,15 @@ class Console
 		}
 		
 		if(isset($this->defaultCommands[$name])){
-			$command = $this->getCommand($name);
-			$this->input->bind($command);
-			$command->execute($this->input,$this->output);
+			try{
+				$command = $this->getCommand($name);
+				$this->input->bind($command);
+				$command->execute($this->input,$this->output);
+			}catch(Exception $e){
+				$this->output->error($e->getMessage());
+			}
+		}else{
+			$this->output->error("can not find command $name");
 		}
 	}
 }

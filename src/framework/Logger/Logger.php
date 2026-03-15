@@ -198,7 +198,7 @@ class Logger{
 	 * @return string
 	 */
 	private function getAccessPath($path = ''){
-		$paths = array('access');
+		$paths = array('logs','access');
 		if($path != '') $paths[] = $path;
 		return $this->app->storagePath(implode(DIRECTORY_SEPARATOR,$paths));
 	}
@@ -210,7 +210,7 @@ class Logger{
 	 * @return string
 	 */
 	private function getDebugPath($path = ''){
-		$paths = array('debug');
+		$paths = array('logs','error');
 		if($path != '') $paths[] = $path;
 		return $this->app->storagePath(implode(DIRECTORY_SEPARATOR,$paths));
 	}

@@ -14,6 +14,7 @@ class Route
     private $namespace = 'Home';
     private $methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'COMMAND'];
     private $paramPatterns = array();
+    private $paramConditions = array(); //参数条件
     private $middlewares = array();
 
     public function __construct($pattern, $callback = null, $methods = [])
@@ -24,6 +25,7 @@ class Route
         if (is_array($methods) && count($methods) > 0) {
             $this->methods = array_map('strtoupper', $methods);
         }
+
         return $this;
     }
 
@@ -197,16 +199,19 @@ class Route
         foreach ($patterns as $k => $param) {
             preg_match('/\{(.*?)\}/', $param, $matchs);
             if ($matchs) {
+                $pattern = '[0-9a-zA-Z\-_\.]+';
+                if($matchs[0] != $param){
+                    $pattern = '([0-9a-zA-Z\-_\.]+)' . str_replace($matchs[0],"",$param);
+                }
                 $this->paramPatterns[] = array(
                     'name' => rtrim($matchs[1], '?'),
-                    'pattern' => null,
+                    'pattern' => $pattern,
                     'required' => (strstr($matchs[1], '?') != false) ? false : true
                 );
                 unset($patterns[$k]);
             }
         }
         $this->uri = implode('/', $patterns);
-
     }
 
     /**
@@ -217,14 +222,7 @@ class Route
      */
     public function where($name, $pattern)
     {
-        if ($this->paramPatterns) {
-            foreach ($this->paramPatterns as $k => $val) {
-                if ($val['name'] == $name) {
-                    $this->paramPatterns[$k]["pattern"] = $pattern;
-                    break;
-                }
-            }
-        }
+        $this->paramConditions[$name] = $pattern;
         return $this;
     }
 
@@ -278,7 +276,6 @@ class Route
             return false;
         }
 
-
         if ($urlParams) {
             foreach ($urlParams as $k => $param) {
                 if (isset($params[$k])) {
@@ -295,28 +292,33 @@ class Route
 
         if ($this->paramPatterns) {
             foreach ($this->paramPatterns as $k => $val) {
+                //判断是否有自定义参数规则
+                if(isset($this->paramConditions[$val['name']])){
+                    $val['pattern'] = $this->paramConditions[$val['name']];
+                }
+
                 if ($val['required'] == true) {
-                    if (isset($params[$k])) {
-                        if ($val["pattern"] != null) {
-                            if (!preg_match(sprintf("/%s/", $val["pattern"]), $params[$k])) {
-                                return false;
-                            }
-                        }
-                        $this->params[$val['name']] = $params[$k];
-                    } else {
+                    if (!isset($params[$k]) || $params[$k] == '') {
                         return false;
                     }
-                } else {
-                    if (isset($params[$k]) && $params[$k] != '') {
-                        if ($val["pattern"] != null) {
-                            if (!preg_match(sprintf("/%s/", $val["pattern"]), $params[$k])) {
-                                return false;
-                            }
-                        }
-
-                        $this->params[$val['name']] = $params[$k];
-                    }
                 }
+
+                if ($val["pattern"] != null) {
+                    if (!preg_match(sprintf("/%s/", $val["pattern"]), $params[$k],$matchs)) {
+                        return false;
+                    }
+
+                    //获取参数值
+                    if(count($matchs) > 1){
+                        $this->params[$val['name']] = $matchs[1];
+                    }else{
+                        $this->params[$val['name']] = $matchs[0];
+                    }
+
+                }else{
+                    $this->params[$val['name']] = $params[$k];
+                }
+
             }
         }
 

@@ -21,6 +21,8 @@ class RunServer extends Command
     public function execute(Input $input, Output $output)
     {
 		$serve = new PhpDevServe(public_path(''));
+    $serve->setPort(config('app.port',8000));
+    $serve->setHost(config('app.host','localhost'));
 		$serve->listen();
     }
 }

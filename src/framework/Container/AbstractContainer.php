@@ -182,8 +182,10 @@ abstract class AbstractContainer implements ContainerInterface {
 		$parameters = [];
 		foreach ($dependencies as $param) {
 			$paramName = $param->name;
-			if ($param->getClass()) {
-				$className = $param->getClass()->name;
+
+			$type = $param->getType();
+			if ($type) {
+				$className = $type->getName();
 				$class = $this->build($className);
 				$parameters[$paramName] = $class;
 			} elseif ($param->isArray()) {

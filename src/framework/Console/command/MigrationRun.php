@@ -24,14 +24,14 @@ class MigrationRun extends Command
 
     public function execute(Input $input, Output $output)
     {
-		$this->Filesystem = new Filesystem();
-		$this->Filesystem->getFiles(database_path('migrations'),function($file){
-			
-			require $file;
-			
-			$arr = explode("_",basename($file));
-			$class = new $arr[1];
-			$class->up();
-		});
+      $this->Filesystem = new Filesystem();
+      $this->Filesystem->getFiles(database_path('migrations'),function($file){
+        
+        require $file;
+        
+        $arr = explode("_",basename($file));
+        $class = new $arr[1];
+        $class->up();
+      });
     }
 }

@@ -75,6 +75,37 @@ abstract class Engine
 	}
 	
 	/**
+	 * fetch template file content without exiting
+	 * @param string $tFile
+	 * @return string;
+	 */
+	protected function fetchContent($tFile){
+		try{
+			$this->getTemplateFile($tFile);
+			$this->getCacheFile($tFile);
+			if(!file_exists($this->cFile) || $this->expire() == true || $this->realtime){
+				$this->parse();
+			}
+			if($this->tVal){
+				extract($this->tVal, EXTR_OVERWRITE);
+			}
+			ob_start();
+			include($this->cFile);
+			$content = ob_get_contents();
+			ob_end_clean();
+			
+		}catch(Exception $ex){
+			throw new Exception($ex->getMessage());
+		}
+		
+		if($this->onReplaceContent != null){
+			$content = call_user_func($this->onReplaceContent,$content);
+		}
+		
+		return $content;
+	}
+	
+	/**
 	 * set callback for template content
 	 * @param callable $callback
 	 * @return $this
@@ -92,6 +123,7 @@ abstract class Engine
 	private function getTemplateFile($tFile){
 		$tFile = str_replace(".",DIRECTORY_SEPARATOR,$tFile);
 		$this->tFile = rtrim($this->templatePath,'/') .'/'. $tFile . $this->tExtName;
+		
 		if(!file_exists($this->tFile)){
 			throw new Exception("Template file does not exist: $this->tFile");
 		}
@@ -187,6 +219,9 @@ abstract class Engine
 				$file = (string)$this->getTemplateFile($val);
 				$content = file_get_contents($file);
 				$this->tContent = str_replace($matchs[0][$k],$content,$this->tContent);
+
+				$this->parseInclude();
+
 			}
 		}
 	}
@@ -258,92 +293,48 @@ abstract class Engine
 			}
 		}
 
-		preg_match_all("/@if\s?\(\[(.*?)\]\)/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php if(%s) {?>",$val),$this->tContent);
-			}
-		}
-		
-		preg_match_all("/@if\s?\(\((.*?)\)\)/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php if(%s) {?>",$val),$this->tContent);
-			}
-		}
-		
-		preg_match_all("/@if\s?\((.*?)\)/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php if(%s) {?>",$val),$this->tContent);
-			}
-		}
 
-		preg_match_all("/@elseif\s?\(\[(.*?)\]\)/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php } elseif(%s) {?>",$val),$this->tContent);
-			}
-		}
+        //if条件语句解析
+		$this->matchExecuteCallback("/@if\s?\((.*)\)/i",$this->tContent,function ($replace,$match){
+            $this->tContent = str_replace($replace,sprintf("<?php if(%s) {?>",$match),$this->tContent);
+        });
 
-		
-		preg_match_all("/@elseif\s?\(\((.*?)\)\)/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php } elseif(%s) {?>",$val),$this->tContent);
-			}
-		}
-		
-		preg_match_all("/@elseif\s?\((.*?)\)/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php } elseif(%s) {?>",$val),$this->tContent);
-			}
-		}
-		
-		preg_match_all("/@else/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs[0] as $val){
-				$this->tContent = str_replace($val,"<?php } else {?>",$this->tContent);
-			}
-		}
-		
-		preg_match_all("/@endif/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs[0] as $val){
-				$this->tContent = str_replace($val,"<?php }?>",$this->tContent);
-			}
-		}
+        $this->matchExecuteCallback("/@elseif\s?\((.*)\)/i",$this->tContent,function ($replace,$match){
+            $this->tContent = str_replace($replace,sprintf("<?php } elseif(%s) {?>",$match),$this->tContent);
+        });
 
-		preg_match_all("/@foreach\(\[(.*?)\]\)/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php foreach(%s) {?>",$val),$this->tContent);
-			}
-		}
-		
-		preg_match_all("/@foreach\(\((.*?)\)\)/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php foreach(%s) {?>",$val),$this->tContent);
-			}
-		}
-		
-		preg_match_all("/@foreach\((.*?)\)/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs[1] as $k=>$val){
-				$this->tContent = str_replace($matchs[0][$k],sprintf("<?php foreach(%s) {?>",$val),$this->tContent);
-			}
-		}
-		
-		preg_match_all("/@endforeach/is",$this->tContent,$matchs);
-		if($matchs[0]){
-			foreach($matchs as $val){
-				$this->tContent = str_replace($val[0],"<?php }?>",$this->tContent);
-			}
-		}
-		
+        $this->matchExecuteCallback("/@else/i",$this->tContent,function ($replace){
+            $this->tContent = str_replace($replace,"<?php } else {?>",$this->tContent);
+        });
+
+        $this->matchExecuteCallback("/@endif/i",$this->tContent,function ($replace){
+            $this->tContent = str_replace($replace,"<?php }?>",$this->tContent);
+        });
+
+        //foreach条件语句解析
+        $this->matchExecuteCallback("/@foreach\((.*)\)/i",$this->tContent,function ($replace,$match){
+            $this->tContent = str_replace($replace,sprintf("<?php foreach(%s) {?>",$match),$this->tContent);
+        });
+
+        $this->matchExecuteCallback("/@endforeach/i",$this->tContent,function ($replace){
+            $this->tContent = str_replace($replace,"<?php }?>",$this->tContent);
+        });
 	}
+
+    private function matchExecuteCallback($pattern,$content,$callback){
+        preg_match_all($pattern,$content,$matchs);
+        if($matchs[0]){
+
+            foreach ($matchs[0] as $k=>$match){
+                if(isset($matchs[1][$k])){
+                    call_user_func($callback,$match,$matchs[1][$k]);
+                }else{
+                    call_user_func($callback,$match);
+                }
+
+            }
+        }
+    }
 	
 	/**
 	 * Compile template variable

@@ -27,7 +27,7 @@ class Input
             $this->consoleName = array_shift($argv);
 			
 			$name = '';
-			if(strpos($argv[0], '-') === false){
+			if(isset($argv[0]) && strpos($argv[0], '-') === false){
 				$name = array_shift($argv);
 			}
 			

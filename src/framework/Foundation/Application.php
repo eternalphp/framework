@@ -3,6 +3,7 @@
 namespace framework\Foundation;
 
 use framework\Container\Container;
+use framework\Debug\Debug;
 use framework\Router\Router;
 use framework\Config\Repository;
 use framework\Filesystem\Filesystem;

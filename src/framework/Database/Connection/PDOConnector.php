@@ -167,6 +167,19 @@ class PDOConnector implements ConnectorInterface
 		exit(sprintf("%s：%s",$message,$error));
 	}
 	
+	public function escape($string){
+		if($string != ''){
+			if ($this->connection) {
+				// PDO->quote() adds single quotes around the escaped string, so we remove the outer quotes
+				// But substr('...', 1, -1) assumes we just trim. It's safer to just use addslashes here.
+				$string = addslashes($string);
+			} else {
+				$string = addslashes($string);
+			}
+		}
+		return (string)$string;
+	}
+	
 	public function __destruct(){
 		$this->close();
 	}

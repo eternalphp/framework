@@ -6,7 +6,7 @@ use Exception;
 
 class Debug extends Exception{
 	
-	private $debugPath = '/debug/';
+	private $debugPath = '/logs/';
 	private $format = 'Ym';
 	private $splitStr = '--';
 	protected $message;
